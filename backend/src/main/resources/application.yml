@@ -1,0 +1,8 @@
+spring:
+  profiles:
+    active: dev # Si no se especifica nada, arranca en modo DEV
+  threads:
+    virtual:
+      enabled: true
+  application:
+    name: pos-system
