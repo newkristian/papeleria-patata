@@ -1,0 +1,53 @@
+name: Backend CI - Spring Boot POS
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**' # Solo se dispara si hay cambios en la carpeta backend
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      # Levantamos MySQL para que tus tests de Spring Boot puedan correr
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: pos_db
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin' # Adoptium es la más estable para entornos productivos
+          cache: 'maven'
+
+      - name: Compilar y Testear con Maven
+        working-directory: ./backend
+        run: mvn clean verify
+        env:
+          # Pasamos los datos de la DB de los services a Spring Boot
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/pos_db
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+
+      - name: Subir artefacto (.jar)
+        # Esto guarda el JAR temporalmente en GitHub por si quieres descargarlo
+        uses: actions/upload-artifact@v4
+        with:
+          name: pos-backend-jar
+          path: backend/target/*.jar
