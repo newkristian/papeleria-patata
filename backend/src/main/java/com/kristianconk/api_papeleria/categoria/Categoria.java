@@ -1,9 +1,11 @@
 package com.kristianconk.api_papeleria.categoria;
 
+import com.kristianconk.api_papeleria.producto.Producto;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.util.ArrayList;
+import java.util.List;
 
 // Categoria.java
 @Data
@@ -22,5 +24,4 @@ public class Categoria {
     @OneToMany(mappedBy = "categoria")
     private List<Producto> productos = new ArrayList<>();
 
-    // Getters y setters
 }

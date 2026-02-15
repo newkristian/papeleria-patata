@@ -38,6 +38,4 @@ public class PagoProveedor {
 
     private String referenciaPago;
     private boolean pagado = false;
-
-    // Getters y setters
 }
