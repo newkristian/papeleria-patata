@@ -35,7 +35,10 @@ public class Venta {
 
     @ManyToOne
     @JoinColumn(name = "cliente_id")
-    private Cliente cliente;
+    private Cliente cliente;  // Puede ser null para venta anónima
+
+    @Column(nullable = false)
+    private boolean ventaAnonima = false;  // Bandera para identificar rápidamente
 
     @Column(nullable = false)
     private LocalDateTime fechaVenta;
@@ -60,8 +63,6 @@ public class Venta {
 
     @CreationTimestamp
     private LocalDateTime fechaCreacion;
-
-    // Getters y setters
 }
 
 

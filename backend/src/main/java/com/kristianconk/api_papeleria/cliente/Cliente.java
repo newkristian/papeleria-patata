@@ -17,8 +17,8 @@ public class Cliente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String telefono;
+    @Column(unique = true)
+    private String telefono;  // Ahora puede ser null para cliente anónimo
 
     private String nombre;
     private String email;
@@ -35,5 +35,12 @@ public class Cliente {
     @OneToMany(mappedBy = "cliente")
     private List<PromocionCliente> promociones = new ArrayList<>();
 
-    // Getters y setters
+    // Constructor para cliente anónimo
+    public static Cliente crearAnonimo() {
+        Cliente anonimo = new Cliente();
+        anonimo.setId(1L); // ID fijo para cliente anónimo
+        anonimo.setNombre("PÚBLICO GENERAL");
+        anonimo.setTelefono("ANÓNIMO");
+        return anonimo;
+    }
 }
