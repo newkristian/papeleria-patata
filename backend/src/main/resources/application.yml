@@ -15,3 +15,8 @@ spring:
         page-parameter: page
         size-parameter: size
         sort-parameter: sort
+app:
+  jwt:
+    secret: ${JWT_SECRET:Ptt-k@uuaii-JWT-S3cr3t-K3y-256-b1ts-M1n1mum!}
+    expiration: ${JWT_EXPIRATION:3600000}
+    refresh-expiration: ${JWT_EXPIRATION:86400000}
