@@ -1,6 +1,7 @@
 package com.kristianconk.api_papeleria.producto;
 
 import com.kristianconk.api_papeleria.categoria.Categoria;
+import com.kristianconk.api_papeleria.producto.foto.ProductoFoto;
 import com.kristianconk.api_papeleria.proveedor.Proveedor;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -8,6 +9,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 // Producto.java
 @Data
@@ -48,6 +51,11 @@ public class Producto {
     private String unidadMedida; // pieza, caja, paquete, etc.
 
     private boolean activo = true;
+
+    // En Producto.java, agregar:
+    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orden ASC, fechaSubida DESC")
+    private List<ProductoFoto> fotos = new ArrayList<>();
 
     @CreationTimestamp
     private LocalDateTime fechaCreacion;
