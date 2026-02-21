@@ -108,6 +108,10 @@ public class FileSystemStorageService implements StorageService {
     @Override
     public void delete(String filename) {
         try {
+            if (filename == null || filename.isBlank()) {
+                return;
+            }
+
             Path file = rootLocation.resolve(filename);
             Files.deleteIfExists(file);
 

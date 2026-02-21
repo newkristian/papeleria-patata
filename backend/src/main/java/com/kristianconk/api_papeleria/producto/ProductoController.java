@@ -1,20 +1,28 @@
 package com.kristianconk.api_papeleria.producto;
 
 import com.kristianconk.api_papeleria.inventario.AjusteInventarioDTO;
+import com.kristianconk.api_papeleria.producto.foto.ProductoFotoDTO;
+import com.kristianconk.api_papeleria.producto.foto.ProductoFotoService;
+import com.kristianconk.api_papeleria.producto.foto.SubirFotoRequest;
 import com.kristianconk.api_papeleria.usuario.Usuario;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/productos")
@@ -23,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 public class ProductoController {
 
     private final ProductoService productoService;
+    private final ProductoFotoService fotoService;
 
     @PostMapping
     @Operation(summary = "Crear nuevo producto")
@@ -130,5 +139,60 @@ public class ProductoController {
         ProductoBusquedaDTO busqueda = new ProductoBusquedaDTO(null, null, null, true, null, null, true);
         Page<ProductoListadoDTO> productos = productoService.buscarProductos(busqueda, pageable);
         return ResponseEntity.ok(productos);
+    }
+
+    @PostMapping(value = "/{productoId}/fotos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Subir foto para un producto")
+    public ResponseEntity<ProductoFotoDTO> subirFoto(
+            @PathVariable Long productoId,
+            @ModelAttribute SubirFotoRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        ProductoFotoDTO foto = fotoService.subirFoto(productoId, request, usuario);
+        return ResponseEntity.status(HttpStatus.CREATED).body(foto);
+    }
+
+    @GetMapping("/{productoId}/fotos")
+    @Operation(summary = "Listar todas las fotos de un producto")
+    public ResponseEntity<List<ProductoFotoDTO>> listarFotos(@PathVariable Long productoId) {
+        return ResponseEntity.ok(fotoService.listarFotos(productoId));
+    }
+
+    @GetMapping("/{productoId}/fotos/{fotoId}")
+    @Operation(summary = "Descargar foto (con opción de thumbnail)")
+    public ResponseEntity<Resource> descargarFoto(
+            @PathVariable Long productoId,
+            @PathVariable Long fotoId,
+            @RequestParam(required = false) Integer size) {
+
+        Resource resource = fotoService.descargarFoto(productoId, fotoId, size);
+
+        String contentType = "image/jpeg";
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
+    }
+
+    @DeleteMapping("/{productoId}/fotos/{fotoId}")
+    @Operation(summary = "Eliminar foto de producto")
+    public ResponseEntity<Void> eliminarFoto(
+            @PathVariable Long productoId,
+            @PathVariable Long fotoId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        fotoService.eliminarFoto(productoId, fotoId, usuario);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{productoId}/fotos/{fotoId}/principal")
+    @Operation(summary = "Establecer foto como principal")
+    public ResponseEntity<ProductoFotoDTO> establecerPrincipal(
+            @PathVariable Long productoId,
+            @PathVariable Long fotoId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        ProductoFotoDTO foto = fotoService.establecerFotoPrincipal(productoId, fotoId, usuario);
+        return ResponseEntity.ok(foto);
     }
 }
