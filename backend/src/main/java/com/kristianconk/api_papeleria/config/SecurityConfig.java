@@ -4,10 +4,8 @@ import com.kristianconk.api_papeleria.security.jwt.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -76,7 +74,7 @@ public class SecurityConfig {
         // Permite el puerto de tu frontend
         configuration.setAllowedOrigins(List.of("http://localhost:4200"));
         // Métodos HTTP permitidos
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         // Cabeceras permitidas (muy importante permitir Authorization para tu JWT)
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
         // Permite el envío de credenciales/cookies si fuera necesario

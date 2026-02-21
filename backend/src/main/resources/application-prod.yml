@@ -1,10 +1,10 @@
 spring:
   datasource:
-    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/pos_default}
+    url: ${DATABASE_URL:jdbc:mariadb://localhost:3306/pos_default}
     username: ${DATABASE_USER}
     password: ${DATABASE_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: com.mariadb.jdbc.Driver
   jpa:
-    database-platform: org.hibernate.dialect.MySQLDialect
+    database-platform: org.hibernate.dialect.MariaDBDialect
     hibernate:
       ddl-auto: validate # En PROD es mejor validar que alterar la tabla automáticamente
