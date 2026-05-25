@@ -77,4 +77,14 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
             @Param("fechaInicio") LocalDateTime fechaInicio,
             @Param("fechaFin") LocalDateTime fechaFin,
             Pageable pageable);
+
+    @Query("SELECT DISTINCT p FROM Producto p " +
+            "LEFT JOIN FETCH p.fotos " +
+            "WHERE p.id = :id")
+    Optional<Producto> findByIdWithFotos(@Param("id") Long id);
+
+    @Query("SELECT DISTINCT p FROM Producto p " +
+            "LEFT JOIN FETCH p.fotos " +
+            "WHERE p.codigoBarras = :codigoBarras")
+    Optional<Producto> findByCodigoBarrasWithFotos(@Param("codigoBarras") String codigoBarras);
 }

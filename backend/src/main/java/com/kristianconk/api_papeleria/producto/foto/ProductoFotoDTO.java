@@ -10,6 +10,6 @@ public record ProductoFotoDTO(
         Boolean esPrincipal,
         Integer orden,
         LocalDateTime fechaSubida,
-        String url,
-        String urlThumbnail
+        String urlOriginal,          // URL para la imagen original
+        String urlThumbnail          // URL para el thumbnail
 ) {}

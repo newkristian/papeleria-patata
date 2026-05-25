@@ -10,5 +10,7 @@ public record ProductoListadoDTO(
         Double precioVenta,
         Integer stockActual,
         Integer stockMinimo,
-        boolean activo
+        boolean activo,
+        String urlThumbnail,                    // URL del thumbnail para listados
+        boolean tieneFotos                       // Indicador útil para el frontend
 ) {}

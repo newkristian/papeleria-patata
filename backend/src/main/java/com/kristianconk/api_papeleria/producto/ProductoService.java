@@ -10,6 +10,8 @@ import com.kristianconk.api_papeleria.error.ResourceNotFoundException;
 import com.kristianconk.api_papeleria.inventario.AjusteInventarioDTO;
 import com.kristianconk.api_papeleria.inventario.InventarioMovimiento;
 import com.kristianconk.api_papeleria.inventario.InventarioMovimientoRepository;
+import com.kristianconk.api_papeleria.producto.foto.ProductoFoto;
+import com.kristianconk.api_papeleria.producto.foto.ProductoFotoDTO;
 import com.kristianconk.api_papeleria.proveedor.Proveedor;
 import com.kristianconk.api_papeleria.proveedor.ProveedorDTO;
 import com.kristianconk.api_papeleria.proveedor.ProveedorRepository;
@@ -19,6 +21,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -197,18 +202,29 @@ public class ProductoService {
                     busqueda.activo(),
                     pageable);
         }
+        // Forzar inicialización de fotos para evitar LazyInitializationException
+        // y optimizar la consulta
+        productos.getContent().forEach(p -> {
+            if (p.getFotos() != null) {
+                p.getFotos().size(); // Inicializar la colección lazy
+            }
+        });
 
         return productos.map(this::mapToListadoDTO);
     }
 
+    // Método optimizado para buscar por ID con todas las fotos
+    @Transactional(readOnly = true)
     public ProductoDetalleDTO buscarPorId(Long id) {
-        Producto producto = productoRepository.findById(id)
+        Producto producto = productoRepository.findByIdWithFotos(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
         return mapToDetalleDTO(producto);
     }
 
+    // Método optimizado para buscar por código de barras con fotos
+    @Transactional(readOnly = true)
     public ProductoDetalleDTO buscarPorCodigoBarras(String codigoBarras) {
-        Producto producto = productoRepository.findByCodigoBarras(codigoBarras)
+        Producto producto = productoRepository.findByCodigoBarrasWithFotos(codigoBarras)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
         return mapToDetalleDTO(producto);
     }
@@ -256,6 +272,22 @@ public class ProductoService {
     }
 
     private ProductoListadoDTO mapToListadoDTO(Producto p) {
+        String urlThumbnail = null;
+        boolean tieneFotos = false;
+
+        // Buscar la foto principal o la primera foto
+        if (p.getFotos() != null && !p.getFotos().isEmpty()) {
+            tieneFotos = true;
+            ProductoFoto fotoPrincipal = p.getFotos().stream()
+                    .filter(ProductoFoto::getEsPrincipal)
+                    .findFirst()
+                    .orElse(p.getFotos().getFirst());
+
+            // Generar URL del thumbnail (tamaño fijo para listados)
+            urlThumbnail = String.format("/api/productos/%d/fotos/%d?size=100",
+                    p.getId(), fotoPrincipal.getId());
+        }
+
         return new ProductoListadoDTO(
                 p.getId(),
                 p.getCodigoBarras(),
@@ -265,11 +297,26 @@ public class ProductoService {
                 p.getPrecioVenta(),
                 p.getStockActual(),
                 p.getStockMinimo(),
-                p.isActivo()
+                p.isActivo(),
+                urlThumbnail,
+                tieneFotos
         );
     }
 
     private ProductoDetalleDTO mapToDetalleDTO(Producto p) {
+        // Mapear fotos
+        List<ProductoFotoDTO> fotosDTO = p.getFotos() != null ?
+                p.getFotos().stream()
+                        .map(f -> mapToFotoDTO(f, p.getId()))
+                        .collect(Collectors.toList()) :
+                List.of();
+
+        // Encontrar foto principal
+        ProductoFotoDTO fotoPrincipal = fotosDTO.stream()
+                .filter(ProductoFotoDTO::esPrincipal)
+                .findFirst()
+                .orElse(null);
+
         return new ProductoDetalleDTO(
                 p.getId(),
                 p.getCodigoBarras(),
@@ -285,7 +332,24 @@ public class ProductoService {
                 p.getUnidadMedida(),
                 p.isActivo(),
                 p.getFechaCreacion(),
-                p.getFechaActualizacion()
+                p.getFechaActualizacion(),
+                fotosDTO,
+                fotoPrincipal
+        );
+    }
+
+    private ProductoFotoDTO mapToFotoDTO(ProductoFoto f, Long productoId) {
+        String baseUrl = String.format("/api/productos/%d/fotos/%d", productoId, f.getId());
+        return new ProductoFotoDTO(
+                f.getId(),
+                f.getNombreArchivo(),
+                f.getContentType(),
+                f.getTamanio(),
+                f.getEsPrincipal(),
+                f.getOrden(),
+                f.getFechaSubida(),
+                baseUrl,                    // URL original
+                baseUrl + "?size=200"        // URL thumbnail (tamaño configurable)
         );
     }
 }

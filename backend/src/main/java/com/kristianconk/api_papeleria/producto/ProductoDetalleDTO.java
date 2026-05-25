@@ -1,9 +1,11 @@
 package com.kristianconk.api_papeleria.producto;
 
 import com.kristianconk.api_papeleria.categoria.CategoriaDTO;
+import com.kristianconk.api_papeleria.producto.foto.ProductoFotoDTO;
 import com.kristianconk.api_papeleria.proveedor.ProveedorDTO;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 // Response DTO para detalle completo
 public record ProductoDetalleDTO(
@@ -21,5 +23,7 @@ public record ProductoDetalleDTO(
         String unidadMedida,
         boolean activo,
         LocalDateTime fechaCreacion,
-        LocalDateTime fechaActualizacion
+        LocalDateTime fechaActualizacion,
+        List<ProductoFotoDTO> fotos,           // Lista completa de fotos
+        ProductoFotoDTO fotoPrincipal           // Foto principal para acceso rápido
 ) {}
