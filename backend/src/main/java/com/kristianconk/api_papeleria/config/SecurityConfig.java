@@ -39,10 +39,14 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Habilitar CORS
                 .csrf(csrf -> csrf.disable()) // Comúnmente deshabilitado cuando el frontend (ej. Angular) y backend están separados
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll()
-                        // Ejemplo de jerarquía de roles para un Punto de Venta (POS)
-                        .requestMatchers("/api/v1/pos/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/pos/sales/**").hasAnyRole("ADMIN", "CASHIER")
+                        .requestMatchers("/api/v*/auth/**").permitAll()
+                        // Jerarquía de roles para el POS
+                        // Admin: acceso total a productos y usuarios
+                        .requestMatchers("/api/v*/admin/**").hasRole("ADMINISTRADOR")
+                        // Ventas: cajeros y admin pueden crear ventas
+                        .requestMatchers("/api/v*/ventas/**").hasAnyRole("ADMINISTRADOR", "VENDEDOR")
+                        // Productos y catálogos: autenticado
+                        .requestMatchers("/api/v*/productos/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

@@ -200,7 +200,7 @@ public class ProductoFotoService {
     }
 
     private ProductoFotoDTO mapToDTO(ProductoFoto foto, Long productoId) {
-        String baseUrl = "/api/productos/" + productoId + "/fotos/" + foto.getId();
+        String baseUrl = "/api/v1/productos/" + productoId + "/fotos/" + foto.getId();
         return new ProductoFotoDTO(
                 foto.getId(),
                 foto.getNombreArchivo(),

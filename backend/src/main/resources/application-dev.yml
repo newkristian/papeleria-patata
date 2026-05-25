@@ -10,7 +10,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: validate # Flyway maneja el esquema
+      ddl-auto: update # Hibernate autogenera el esquema en H2 de desarrollo
   flyway:
     enabled: true
     locations: classpath:db/migration

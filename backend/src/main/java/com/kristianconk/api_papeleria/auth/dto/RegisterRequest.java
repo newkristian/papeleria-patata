@@ -9,7 +9,7 @@ public class RegisterRequest {
     private String nombre;
     private String email;
     private String password;
-    private String role; // Ej. "ADMIN" o "CASHIER"
+    private String role; // Ej. "ADMINISTRADOR" o "VENDEDOR"
 
     // Getters y Setters
 }

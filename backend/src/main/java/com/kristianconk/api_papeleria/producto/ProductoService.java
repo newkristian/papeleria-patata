@@ -284,7 +284,7 @@ public class ProductoService {
                     .orElse(p.getFotos().getFirst());
 
             // Generar URL del thumbnail (tamaño fijo para listados)
-            urlThumbnail = String.format("/api/productos/%d/fotos/%d?size=100",
+            urlThumbnail = String.format("/api/v1/productos/%d/fotos/%d?size=100",
                     p.getId(), fotoPrincipal.getId());
         }
 
@@ -339,7 +339,7 @@ public class ProductoService {
     }
 
     private ProductoFotoDTO mapToFotoDTO(ProductoFoto f, Long productoId) {
-        String baseUrl = String.format("/api/productos/%d/fotos/%d", productoId, f.getId());
+        String baseUrl = String.format("/api/v1/productos/%d/fotos/%d", productoId, f.getId());
         return new ProductoFotoDTO(
                 f.getId(),
                 f.getNombreArchivo(),
