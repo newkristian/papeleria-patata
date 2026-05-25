@@ -1,10 +1,14 @@
 spring:
   datasource:
-    url: ${DATABASE_URL:jdbc:mariadb://localhost:3306/pos_default}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/pos_default}
     username: ${DATABASE_USER}
     password: ${DATABASE_PASSWORD}
-    driver-class-name: com.mariadb.jdbc.Driver
+    driver-class-name: org.postgresql.Driver
   jpa:
-    database-platform: org.hibernate.dialect.MariaDBDialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate # En PROD es mejor validar que alterar la tabla automáticamente
+      ddl-auto: validate # Flyway maneja el esquema; JPA solo valida
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
