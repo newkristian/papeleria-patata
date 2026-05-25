@@ -10,7 +10,7 @@
 
 **Avance estimado**: ~45-50% del MVP.
 
-El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, entidades bien modeladas). Se ha homologado la API bajo el prefijo `/api/v1` y se completó de forma robusta la lógica de creación de ventas (`crearVenta`), incluyendo validación de stock, descuentos por porcentaje, roles, DTOs y la persistencia de promociones VIP en base de datos. El módulo de **Productos** es el más maduro (~85%). Faltan los CRUDs de Categorías, Clientes, Tiendas, Proveedores, Usuarios e Inventario. No hay reportes, corte de caja, ni manejo de devoluciones.
+El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, entidades bien modeladas). Se ha homologado la API bajo el prefijo `/api/v1` y se completó de forma robusta la lógica de creación de ventas (`crearVenta`), incluyendo validación de stock, descuentos por porcentaje, roles, DTOs y la persistencia de promociones VIP en base de datos. El módulo de **Productos** es el más maduro (~85%). Faltan los CRUDs de Categorías, Clientes, Proveedores, Usuarios e Inventario (el CRUD de Tiendas ha sido completado). No hay reportes, corte de caja, ni manejo de devoluciones.
 
 ---
 
@@ -129,9 +129,8 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 1. **[RESUELTO] `VentaService.crearVenta()` no mapea los detalles**
    - El método ahora mapea correctamente los detalles recibidos, valida existencias, estado activo, e ID de producto, y descuenta stock adecuadamente.
 
-2. **`TiendaRepository` no extiende `JpaRepository`**
-   - `public interface TiendaRepository {}` — interfaz vacía.
-   - **Impacto**: No se pueden guardar ni consultar tiendas.
+2. **[RESUELTO] `TiendaRepository` no extiende `JpaRepository`**
+   - La interfaz ahora extiende `JpaRepository<Tienda, Long>` y se implementó todo el CRUD (Controller, Service, DTOs, Mapper) con control de acceso por roles.
 
 3. **`AuthService.register()` ignora el rol solicitado**
    - Siempre asigna `RolUsuario.VENDEDOR`.
@@ -167,7 +166,7 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 | # | Tarea | Prioridad | Estado |
 |---|---|---|---|
 | 1 | Arreglar `VentaService.crearVenta()` — mapear detalles desde DTO | 🔴 | ✅ RESUELTO |
-| 2 | Arreglar `TiendaRepository` — extender `JpaRepository<Tienda, Long>` | 🔴 | ❌ PENDIENTE |
+| 2 | Arreglar `TiendaRepository` — extender `JpaRepository<Tienda, Long>` | 🔴 | ✅ RESUELTO |
 | 3 | Arreglar `SecurityConfig` — mapear roles correctamente | 🔴 | ❌ PENDIENTE |
 | 4 | Arreglar `AuthService.register()` — respetar rol del request | 🔴 | ❌ PENDIENTE |
 | 5 | Arreglar `AuthService.login()` — buscar por email/username correcto | 🟡 | ❌ PENDIENTE |
@@ -180,7 +179,7 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 |---|---|
 | **Categorías** | `CategoriaController` + `CategoriaService`: CRUD básico |
 | **Clientes** | `ClienteController` + `ClienteService`: CRUD, búsqueda por teléfono |
-| **Tiendas** | `TiendaController` + `TiendaService`: CRUD, asignación de usuarios |
+| **Tiendas** | ✅ CRUD completado con control de accesos (sólo Admin edita, resto consulta) |
 | **Proveedores** | `ProveedorController` + `ProveedorService`: CRUD, reporte de ventas por proveedor, cálculo de comisiones |
 | **Usuarios** | `UsuarioController` + `UsuarioService`: CRUD, cambio de contraseña, activación/desactivación |
 | **Inventario** | `InventarioController` + `InventarioService`: historial de movimientos, entradas y salidas |
@@ -253,11 +252,11 @@ El proyecto tiene una **arquitectura bien pensada** y las **entidades correctame
 - ✅ Creación de un `Dockerfile-DB` para levantar una base de datos PostgreSQL local en desarrollo con las credenciales correspondientes
 - ✅ Migraciones V1 (esquema completo con 12 tablas + índices + secuencia de folios) y V2 (datos de prueba: 10 productos, 2 usuarios, 3 ventas) ejecutadas directamente en PostgreSQL
 
-Sin embargo, **el núcleo del negocio (ventas) tiene bugs que impiden su funcionamiento**, y la mayoría de los módulos de soporte (categorías, clientes, tiendas, proveedores, usuarios) no tienen endpoints expuestos. Sin estos, no se puede operar el sistema.
+Sin embargo, **el núcleo del negocio (ventas) tiene bugs que impiden su funcionamiento**, y la mayoría de los módulos de soporte (categorías, clientes, proveedores, usuarios) no tienen endpoints expuestos. Sin estos, no se puede operar el sistema.
 
 **Para un MVP funcional mínimo desplegable en servidor, se requiere**:
 - Corregir los 6 bugs críticos/altos
-- Implementar CRUDs de categorías, clientes, tiendas, proveedores y usuarios
+- Implementar CRUDs de categorías, clientes, proveedores y usuarios
 - Completar el flujo de ventas (crear, listar, cancelar)
 
 Con esto, se tendría un sistema POS básico operable. El resto (reportes, corte de caja, devoluciones) puede ir en una segunda fase.

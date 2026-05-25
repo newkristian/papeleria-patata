@@ -23,7 +23,7 @@ public class Tienda {
     private String direccion;
     private String telefono;
     private String email;
-    private String rfc;
+    // private String rfc;
 
     @OneToMany(mappedBy = "tienda")
     private List<Usuario> usuarios = new ArrayList<>();

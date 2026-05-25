@@ -64,12 +64,13 @@ public class VentaController {
                 usuario.getRol());
     }
 
-    private TiendaResponseDTO mapTienda(Tienda tienda) {
+    private TiendaResponseDTO mapTienda(final Tienda tienda) {
         return new TiendaResponseDTO(
                 tienda.getId(),
                 tienda.getNombre(),
                 tienda.getDireccion(),
-                tienda.getTelefono());
+                tienda.getTelefono(),
+                tienda.getEmail());
     }
 
     private ClienteResponseDTO mapCliente(Cliente cliente) {
