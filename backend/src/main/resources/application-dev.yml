@@ -1,23 +1,17 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:posdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
-    driverClassName: org.h2.Driver
-    username: sa
-    password: password
-  h2:
-    console:
-      enabled: true # Para que puedas ver la DB en /h2-console
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/posdb_dev}
+    driver-class-name: org.postgresql.Driver
+    username: ${DATABASE_USER:posuser}
+    password: ${DATABASE_PASSWORD:pospass}
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update # Hibernate autogenera el esquema en H2 de desarrollo
+      ddl-auto: validate
   flyway:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
-    # H2 no soporta todas las features de PostgreSQL; ignoramos errores no bloqueantes
-    placeholders:
-      skip: true
   security:
     user:
       name: user

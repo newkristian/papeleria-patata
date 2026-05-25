@@ -1,0 +1,7 @@
+FROM postgres:16.2-alpine
+
+ENV POSTGRES_DB=posdb_dev
+ENV POSTGRES_USER=posuser
+ENV POSTGRES_PASSWORD=pospass
+
+EXPOSE 5432

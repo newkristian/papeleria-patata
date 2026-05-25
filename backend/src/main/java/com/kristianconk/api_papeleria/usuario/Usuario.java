@@ -56,6 +56,7 @@ public class Usuario implements UserDetails {
     @JoinColumn(name = "tienda_id")
     private Tienda tienda;
 
+    @Builder.Default
     private boolean activo = true;
 
     @CreationTimestamp

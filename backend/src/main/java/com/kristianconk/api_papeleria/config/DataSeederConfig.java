@@ -37,7 +37,7 @@ public class DataSeederConfig {
 
                 userRepository.saveAll(List.of(admin, cashier));
 
-                System.out.println("✅ Base de datos H2 inicializada con usuarios de prueba para el POS.");
+                System.out.println("✅ Base de datos PostgreSQL inicializada con usuarios de prueba para el POS.");
             } else {
                 System.out.println("⚡ La base de datos ya contiene usuarios. Se omite la inicialización.");
             }

@@ -1,16 +1,16 @@
 # Reporte de Avance — Backend POS Papelería
 
 **Fecha**: 22 de mayo de 2026
-**Stack**: Spring Boot 4.0.2, Java 21, PostgreSQL/H2, JWT, Flyway, Docker
+**Stack**: Spring Boot 4.0.2, Java 21, PostgreSQL, JWT, Flyway, Docker
 **Objetivo**: Evaluar el avance real del backend y estimar lo que falta para un MVP funcional en servidor.
 
 ---
 
 ## Resumen Ejecutivo
 
-**Avance estimado**: ~35-40% del MVP.
+**Avance estimado**: ~45-50% del MVP.
 
-El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, entidades bien modeladas), pero la capa de negocio está incompleta. El módulo de **Productos** es el más maduro (~85%). Los módulos de **Ventas** y **Auth** tienen funcionalidad parcial con bugs críticos. Los módulos de **Categorías, Clientes, Tiendas, Proveedores, Usuarios e Inventario** carecen de servicios y controladores. No hay reportes, corte de caja, ni manejo de devoluciones.
+El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, entidades bien modeladas). Se ha homologado la API bajo el prefijo `/api/v1` y se completó de forma robusta la lógica de creación de ventas (`crearVenta`), incluyendo validación de stock, descuentos por porcentaje, roles, DTOs y la persistencia de promociones VIP en base de datos. El módulo de **Productos** es el más maduro (~85%). Faltan los CRUDs de Categorías, Clientes, Tiendas, Proveedores, Usuarios e Inventario. No hay reportes, corte de caja, ni manejo de devoluciones.
 
 ---
 
@@ -20,7 +20,7 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 | Componente | Estado | Detalle |
 |---|---|---|
 | Spring Boot 4.0.2 + Java 21 | ✅ | Virtual Threads habilitados |
-| PostgreSQL (prod) / H2 (dev) | ✅ | Perfiles dev y prod configurados; H2 en modo PostgreSQL |
+| PostgreSQL | ✅ | Perfiles dev y prod configurados puramente con PostgreSQL |
 | Dockerfile multi-etapa | ✅ | Build con Temurin 21, ZGC en runtime, usuario no-root |
 | Flyway | ✅ | V1: esquema inicial (12 tablas + índices), V2: datos de prueba |
 | CORS configurado | ✅ | Permite localhost:4200 |
@@ -72,14 +72,14 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 - **Repository**: ✅ 10+ queries personalizadas (JPQL, JOIN FETCH)
 - **DTOs**: ✅ Request, Response, Listado, Detalle, Búsqueda
 
-#### Ventas (~30% completo)
+#### Ventas (~50% completo)
 - **Controller** (`/api/v1/ventas`): ⚠️ Solo POST (crear venta). Sin anotaciones Swagger.
-- **Service**: ⚠️ Lógica parcial
+- **Service**: ✅ Lógica de negocio core funcional
   - ✅ Generación de folio
-  - ✅ Manejo de cliente anónimo
-  - ✅ Validación de descuentos por rol
-  - ❌ **BUG CRÍTICO**: No mapea los detalles de la venta desde el DTO. `venta.getDetalles()` siempre está vacío.
-  - ❌ `verificarPromocionesCliente` crea la promoción pero nunca la guarda.
+  - ✅ Manejo de cliente anónimo (público general con ID 1)
+  - ✅ Validación de descuentos por rol y porcentaje
+  - ✅ **BUG CRÍTICO RESUELTO**: Mapeo completo de detalles de la venta desde el DTO, descuento de stock y cálculo matemático preciso de descuentos.
+  - ✅ `verificarPromocionesCliente` crea y persiste la promoción VIP del cliente calificado.
   - ❌ No hay GET para listar/consultar ventas.
   - ❌ No hay endpoint para cancelar ventas.
   - ❌ No hay endpoint para ventas del día.
@@ -126,10 +126,8 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 
 ### 🔴 Críticos (bloquean funcionalidad core)
 
-1. **`VentaService.crearVenta()` no mapea los detalles**
-   - El método crea `Venta venta = new Venta()` pero nunca itera sobre `ventaDTO.detalles()` para crear las entidades `DetalleVenta`.
-   - Luego intenta `venta.getDetalles().stream()...` lo cual retorna lista vacía.
-   - **Impacto**: Las ventas se crean sin productos. El stock no se descuenta.
+1. **[RESUELTO] `VentaService.crearVenta()` no mapea los detalles**
+   - El método ahora mapea correctamente los detalles recibidos, valida existencias, estado activo, e ID de producto, y descuenta stock adecuadamente.
 
 2. **`TiendaRepository` no extiende `JpaRepository`**
    - `public interface TiendaRepository {}` — interfaz vacía.
@@ -139,10 +137,8 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
    - Siempre asigna `RolUsuario.VENDEDOR`.
    - **Impacto**: No se pueden crear admins ni gerentes vía API.
 
-4. **Inconsistencia en rutas de API**
-   - Productos: `/api/productos/**`
-   - Ventas y Auth: `/api/v1/ventas/**`, `/api/v1/auth/**`
-   - **Impacto**: Confusión en el frontend y en la configuración de seguridad.
+4. **[RESUELTO] Inconsistencia en rutas de API**
+   - Se homologaron todas las rutas bajo `/api/v1` (`/api/v1/productos`, `/api/v1/ventas`, `/api/v1/auth`) y se configuró `SecurityConfig.java` utilizando el comodín `/api/v*/...` para soportar versiones dinámicamente.
 
 5. **`SecurityConfig` usa roles con prefijo incorrecto**
    - `.hasRole("ADMIN")` espera `ROLE_ADMIN` pero el enum es `ADMINISTRADOR`.
@@ -152,13 +148,14 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 
 ### 🟡 Altos (funcionalidad rota o insegura)
 
-6. **`VentaService.verificarPromocionesCliente()` no persiste la promoción**
-   - Crea el objeto `PromocionCliente` pero no llama a `promocionClienteRepository.save()`.
+6. **[RESUELTO] `VentaService.verificarPromocionesCliente()` no persiste la promoción**
+   - Se creó `PromocionClienteRepository` y se agregó la inyección al servicio para guardar exitosamente la promoción VIP en base de datos.
 
 ### 🟢 Medios/Bajos
 
-7. Solo existe 1 test (`contextLoads()`). Cero cobertura de unidad o integración.
-8. No hay manejo de excepciones de validación (`@Valid`).
+7. Solo existe 1 test (`contextLoads()`). Cero cobertura de unidad o integración (se configuró PostgreSQL en dev con `ddl-auto: validate` logrando que el test y la app arranquen exitosamente una vez levantado el contenedor de base de datos local).
+8. **[RESUELTO] No hay manejo de excepciones de validación (`@Valid`)**
+   - Se agregaron las anotaciones `@Valid` en controlador, Bean Validation en DTOs (`VentaRequestDTO` y `DetalleVentaRequestDTO`) y su respectivo `@ExceptionHandler` global en `GlobalExceptionHandler.java` para responder de forma amigable con códigos HTTP 400.
 9. `RegisterRequest` usa Lombok `@Data`/`@Builder` en vez de record como los otros DTOs.
 10. El `ProductoController` en el método `ajustarInventario` recibe `@AuthenticationPrincipal Usuario usuario` pero `Usuario` es una entidad JPA con `@Data` que puede causar problemas de serialización.
 
@@ -167,15 +164,15 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 ## 3. Lo que FALTA para un MVP funcional
 
 ### 3.1 Correcciones urgentes (requeridas para que funcione)
-| # | Tarea | Prioridad |
-|---|---|---|
-| 1 | Arreglar `VentaService.crearVenta()` — mapear detalles desde DTO | 🔴 |
-| 2 | Arreglar `TiendaRepository` — extender `JpaRepository<Tienda, Long>` | 🔴 |
-| 3 | Arreglar `SecurityConfig` — mapear roles correctamente | 🔴 |
-| 4 | Arreglar `AuthService.register()` — respetar rol del request | 🔴 |
-| 5 | Arreglar `AuthService.login()` — buscar por email/username correcto | 🟡 |
-| 6 | Persistir promociones en `VentaService` | 🟡 |
-| 7 | Agregar `GlobalExceptionHandler` para validación y argumentos | 🟡 |
+| # | Tarea | Prioridad | Estado |
+|---|---|---|---|
+| 1 | Arreglar `VentaService.crearVenta()` — mapear detalles desde DTO | 🔴 | ✅ RESUELTO |
+| 2 | Arreglar `TiendaRepository` — extender `JpaRepository<Tienda, Long>` | 🔴 | ❌ PENDIENTE |
+| 3 | Arreglar `SecurityConfig` — mapear roles correctamente | 🔴 | ❌ PENDIENTE |
+| 4 | Arreglar `AuthService.register()` — respetar rol del request | 🔴 | ❌ PENDIENTE |
+| 5 | Arreglar `AuthService.login()` — buscar por email/username correcto | 🟡 | ❌ PENDIENTE |
+| 6 | Persistir promociones en `VentaService` | 🟡 | ✅ RESUELTO |
+| 7 | Agregar `GlobalExceptionHandler` para validación y argumentos | 🟡 | ✅ RESUELTO |
 
 ### 3.2 Controladores y servicios faltantes
 
@@ -250,10 +247,11 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 
 El proyecto tiene una **arquitectura bien pensada** y las **entidades correctamente modeladas** para un sistema POS de papelería. La base de seguridad (JWT + Spring Security) está implementada, y el módulo de productos está casi completo.
 
-**Cambios recientes (22 mayo 2026)**:
-- ✅ Migración de MariaDB a PostgreSQL (driver, dialect, configs)
-- ✅ Flyway correctamente configurado con perfil dev (H2 modo PostgreSQL) y prod (PostgreSQL)
-- ✅ Migraciones V1 (esquema completo con 12 tablas + índices + secuencia de folios) y V2 (datos de prueba: 10 productos, 2 usuarios, 3 ventas)
+**Cambios recientes (24 mayo 2026)**:
+- ✅ Migración completa y exclusiva a PostgreSQL en todos los entornos (eliminando base de datos H2 en desarrollo)
+- ✅ Flyway configurado con PostgreSQL en todos los perfiles (`dev` y `prod`)
+- ✅ Creación de un `Dockerfile-DB` para levantar una base de datos PostgreSQL local en desarrollo con las credenciales correspondientes
+- ✅ Migraciones V1 (esquema completo con 12 tablas + índices + secuencia de folios) y V2 (datos de prueba: 10 productos, 2 usuarios, 3 ventas) ejecutadas directamente en PostgreSQL
 
 Sin embargo, **el núcleo del negocio (ventas) tiene bugs que impiden su funcionamiento**, y la mayoría de los módulos de soporte (categorías, clientes, tiendas, proveedores, usuarios) no tienen endpoints expuestos. Sin estos, no se puede operar el sistema.
 

@@ -18,10 +18,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Objects;
-import java.util.UUID;
 
 @Service
-//@Profile("local")
+// @Profile("local")
 public class FileSystemStorageService implements StorageService {
 
     private final Path rootLocation;
@@ -29,7 +28,7 @@ public class FileSystemStorageService implements StorageService {
     // Inyectamos el valor del yaml con @Value
     public FileSystemStorageService(@Value("${app.storage-service.upload-path}") String storageLocation) {
         // Validamos que no venga vacío
-        if(storageLocation.trim().isEmpty()){
+        if (storageLocation.trim().isEmpty()) {
             throw new RuntimeException("La ruta de carga de archivos no puede estar vacía.");
         }
         this.rootLocation = Paths.get(storageLocation);
@@ -66,7 +65,8 @@ public class FileSystemStorageService implements StorageService {
             }
 
             // Usamos un nombre único o mantenemos el original según tu lógica.
-            // Aquí combinamos UUID (que vendría en el subDirectorio) con el nombre original.
+            // Aquí combinamos UUID (que vendría en el subDirectorio) con el nombre
+            // original.
             Path destinationFile = destinationFolder.resolve(filename);
 
             // Importante: Verificación extra de seguridad

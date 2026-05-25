@@ -37,7 +37,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Habilitar CORS
-                .csrf(csrf -> csrf.disable()) // Comúnmente deshabilitado cuando el frontend (ej. Angular) y backend están separados
+                .csrf(csrf -> csrf.disable()) // Comúnmente deshabilitado cuando el frontend (ej. Angular) y backend
+                                              // están separados
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v*/auth/**").permitAll()
                         // Jerarquía de roles para el POS
@@ -47,12 +48,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/v*/ventas/**").hasAnyRole("ADMINISTRADOR", "VENDEDOR")
                         // Productos y catálogos: autenticado
                         .requestMatchers("/api/v*/productos/**").authenticated()
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                //.authenticationProvider(authenticationProvider())
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // .authenticationProvider(authenticationProvider())
                 .authenticationManager(authenticationManager())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -65,7 +64,6 @@ public class SecurityConfig {
         authProvider.setPasswordEncoder(passwordEncoder());
         return new ProviderManager(authProvider);
     }
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {

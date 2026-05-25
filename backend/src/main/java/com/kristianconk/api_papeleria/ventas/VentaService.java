@@ -3,6 +3,7 @@ package com.kristianconk.api_papeleria.ventas;
 import com.kristianconk.api_papeleria.cliente.Cliente;
 import com.kristianconk.api_papeleria.cliente.ClienteRepository;
 import com.kristianconk.api_papeleria.cliente.PromocionCliente;
+import com.kristianconk.api_papeleria.cliente.PromocionClienteRepository;
 import com.kristianconk.api_papeleria.enums.RolUsuario;
 import com.kristianconk.api_papeleria.error.AccesoDenegadoException;
 import com.kristianconk.api_papeleria.error.ResourceNotFoundException;
@@ -12,117 +13,132 @@ import com.kristianconk.api_papeleria.usuario.Usuario;
 import com.kristianconk.api_papeleria.utils.FolioGenerador;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class VentaService {
-
 
     private final VentaRepository ventaRepository;
     private final ClienteRepository clienteRepository;
     private final ProductoRepository productoRepository;
+    private final PromocionClienteRepository promocionClienteRepository;
     private final FolioGenerador folioGenerador;
 
+    public Venta crearVenta(final VentaRequestDTO ventaDTO, final Usuario usuario) {
+        if (usuario.getRol() == RolUsuario.INVENTARISTA) {
+            throw new AccesoDenegadoException("El rol INVENTARISTA no tiene permisos para crear ventas");
+        }
 
+        if (usuario.getRol() == RolUsuario.VENDEDOR && ventaDTO.descuento() > 10.0) {
+            throw new AccesoDenegadoException("Vendedor no puede aplicar descuentos mayores al 10%");
+        }
 
-    public Venta crearVenta(VentaRequestDTO ventaDTO, Usuario usuario) {
+        if (usuario.getTienda() == null) {
+            throw new IllegalArgumentException("El usuario no tiene una tienda asignada para realizar ventas");
+        }
 
-        Venta venta = new Venta();
+        final Venta venta = new Venta();
+        venta.setFolio(folioGenerador.generarFolio());
+        venta.setUsuario(usuario);
+        venta.setFechaVenta(LocalDateTime.now());
+        venta.setMetodoPago(ventaDTO.metodoPago());
+        venta.setTienda(usuario.getTienda());
 
-        // Si viene clienteId, asignar cliente, si no, venta anónima
         if (ventaDTO.clienteId() != null) {
-            Cliente cliente = clienteRepository.findById(ventaDTO.clienteId())
+            final Cliente cliente = clienteRepository.findById(ventaDTO.clienteId())
                     .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
             venta.setCliente(cliente);
             venta.setVentaAnonima(false);
         } else {
-            venta.setVentaAnonima(true);
-        }
-
-        venta.setDescuento(ventaDTO.descuento());
-        venta.setMetodoPago(ventaDTO.metodoPago());
-        // Validar permisos según el rol
-        if (usuario.getRol() == RolUsuario.VENDEDOR && venta.getDescuento() > 10) {
-            throw new AccesoDenegadoException("Vendedor no puede aplicar descuentos mayores al 10%");
-        }
-
-        // Procesar la venta
-        venta.setFolio(folioGenerador.generarFolio());
-        venta.setUsuario(usuario);
-        venta.setFechaVenta(LocalDateTime.now());
-
-        // Manejar cliente anónimo
-        if (venta.getCliente() == null) {
-            venta.setVentaAnonima(true);
-            // Opción 1: Dejar cliente como null
-            // venta.setCliente(null);
-
-            // Opción 2: Asignar cliente anónimo por defecto
-            Cliente clienteAnonimo = clienteRepository.findById(1L)
+            final Cliente clienteAnonimo = clienteRepository.findById(1L)
                     .orElseGet(() -> {
-                        Cliente anonimo = new Cliente();
+                        final Cliente anonimo = new Cliente();
                         anonimo.setId(1L);
                         anonimo.setNombre("PÚBLICO GENERAL");
                         anonimo.setTelefono("ANÓNIMO");
                         return clienteRepository.save(anonimo);
                     });
             venta.setCliente(clienteAnonimo);
-        } else {
-            venta.setVentaAnonima(false);
+            venta.setVentaAnonima(true);
         }
 
-        // Calcular totales
-        double subtotal = venta.getDetalles().stream()
-                .mapToDouble(DetalleVenta::getSubtotal)
-                .sum();
-        venta.setSubtotal(subtotal);
-        venta.setTotal(subtotal - venta.getDescuento());
+        final List<DetalleVenta> detalles = new ArrayList<>();
+        double subtotalAcumulado = 0.0;
 
-        // Actualizar inventario
-        venta.getDetalles().forEach(detalle -> {
-            Producto producto = detalle.getProducto();
-            producto.setStockActual(producto.getStockActual() - detalle.getCantidad());
+        for (final DetalleVentaRequestDTO detalleDTO : ventaDTO.detalles()) {
+            final Producto producto = productoRepository.findById(detalleDTO.productoId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Producto no encontrado con ID: " + detalleDTO.productoId()));
+
+            if (!producto.isActivo()) {
+                throw new IllegalArgumentException("El producto " + producto.getNombre() + " no está activo");
+            }
+
+            if (producto.getStockActual() < detalleDTO.cantidad()) {
+                throw new IllegalArgumentException("Stock insuficiente para el producto: " + producto.getNombre()
+                        + " (Stock actual: " + producto.getStockActual() + ", solicitado: " + detalleDTO.cantidad() + ")");
+            }
+
+            producto.setStockActual(producto.getStockActual() - detalleDTO.cantidad());
             productoRepository.save(producto);
-        });
 
-        Venta ventaGuardada = ventaRepository.save(venta);
+            final DetalleVenta detalle = new DetalleVenta();
+            detalle.setVenta(venta);
+            detalle.setProducto(producto);
+            detalle.setCantidad(detalleDTO.cantidad());
+            detalle.setPrecioUnitario(detalleDTO.precioUnitario());
 
-        // Actualizar total de compras del cliente (si no es anónimo)
-        if (!venta.isVentaAnonima() && venta.getCliente() != null) {
-            Cliente cliente = venta.getCliente();
+            final double detalleSubtotal = detalleDTO.cantidad() * detalleDTO.precioUnitario();
+            detalle.setSubtotal(detalleSubtotal);
+            subtotalAcumulado += detalleSubtotal;
+
+            detalles.add(detalle);
+        }
+
+        venta.setDetalles(detalles);
+        venta.setSubtotal(subtotalAcumulado);
+
+        final double descuentoMonto = subtotalAcumulado * (ventaDTO.descuento() / 100.0);
+        venta.setDescuento(descuentoMonto);
+        venta.setTotal(subtotalAcumulado - descuentoMonto);
+
+        final Venta ventaGuardada = ventaRepository.save(venta);
+
+        if (!ventaGuardada.isVentaAnonima() && ventaGuardada.getCliente() != null) {
+            final Cliente cliente = ventaGuardada.getCliente();
             cliente.setTotalCompras(cliente.getTotalCompras() + ventaGuardada.getTotal());
             clienteRepository.save(cliente);
-
-            // Verificar si aplica promociones automáticas
             verificarPromocionesCliente(cliente);
         }
 
         return ventaGuardada;
     }
 
-    public List<Venta> getVentasPorCliente(Long clienteId) {
+    @Transactional(readOnly = true)
+    public List<Venta> getVentasPorCliente(final Long clienteId) {
         if (clienteId == 1L) {
             return ventaRepository.findByVentaAnonimaTrue();
         }
         return ventaRepository.findByClienteId(clienteId);
     }
 
-    private void verificarPromocionesCliente(Cliente cliente) {
-        // Si el cliente supera cierto monto de compras, asignar nivel y promociones
-        if (cliente.getTotalCompras() > 5000 && "Regular".equals(cliente.getNivel())) {
+    private void verificarPromocionesCliente(final Cliente cliente) {
+        if (cliente.getTotalCompras() > 5000.0 && "Regular".equals(cliente.getNivel())) {
             cliente.setNivel("VIP");
-            // Crear promoción automática para cliente VIP
-            PromocionCliente promocion = new PromocionCliente();
+            final PromocionCliente promocion = new PromocionCliente();
             promocion.setCliente(cliente);
             promocion.setDescripcion("Cliente VIP - 10% de descuento en todas sus compras");
             promocion.setPorcentajeDescuento(10.0);
             promocion.setFechaInicio(LocalDate.now());
             promocion.setFechaFin(LocalDate.now().plusMonths(6));
-            // Guardar promoción
+            promocionClienteRepository.save(promocion);
         }
     }
 }

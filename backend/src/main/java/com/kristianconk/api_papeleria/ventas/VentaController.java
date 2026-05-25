@@ -2,14 +2,14 @@ package com.kristianconk.api_papeleria.ventas;
 
 import com.kristianconk.api_papeleria.cliente.Cliente;
 import com.kristianconk.api_papeleria.cliente.ClienteResponseDTO;
-import com.kristianconk.api_papeleria.error.ResourceNotFoundException;
 import com.kristianconk.api_papeleria.producto.Producto;
 import com.kristianconk.api_papeleria.producto.ProductoResponseDTO;
 import com.kristianconk.api_papeleria.tienda.Tienda;
 import com.kristianconk.api_papeleria.tienda.TiendaResponseDTO;
 import com.kristianconk.api_papeleria.usuario.Usuario;
 import com.kristianconk.api_papeleria.usuario.UsuarioResponseDTO;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,17 +23,18 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/ventas")
+@RequiredArgsConstructor
 public class VentaController {
 
-    @Autowired
-    private VentaService ventaService;
+    private final VentaService ventaService;
 
     @PostMapping
-    public ResponseEntity<VentaResponseDTO> crearVenta(@RequestBody VentaRequestDTO ventaDTO,
-                                            @AuthenticationPrincipal Usuario usuario) {
+    public ResponseEntity<VentaResponseDTO> crearVenta(
+            @Valid @RequestBody final VentaRequestDTO ventaDTO,
+            @AuthenticationPrincipal final Usuario usuario) {
 
-        Venta ventaCreada = ventaService.crearVenta(ventaDTO, usuario);
-        VentaResponseDTO response = mapToResponseDTO(ventaCreada);
+        final Venta ventaCreada = ventaService.crearVenta(ventaDTO, usuario);
+        final VentaResponseDTO response = mapToResponseDTO(ventaCreada);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -51,8 +52,7 @@ public class VentaController {
                 venta.getTotal(),
                 venta.getMetodoPago(),
                 venta.getEstado(),
-                mapDetalles(venta.getDetalles())
-        );
+                mapDetalles(venta.getDetalles()));
     }
 
     private UsuarioResponseDTO mapUsuario(Usuario usuario) {
@@ -61,8 +61,7 @@ public class VentaController {
                 usuario.getUsername(),
                 usuario.getNombre(),
                 usuario.getApellidos(),
-                usuario.getRol()
-        );
+                usuario.getRol());
     }
 
     private TiendaResponseDTO mapTienda(Tienda tienda) {
@@ -70,8 +69,7 @@ public class VentaController {
                 tienda.getId(),
                 tienda.getNombre(),
                 tienda.getDireccion(),
-                tienda.getTelefono()
-        );
+                tienda.getTelefono());
     }
 
     private ClienteResponseDTO mapCliente(Cliente cliente) {
@@ -80,8 +78,7 @@ public class VentaController {
                 cliente.getNombre(),
                 cliente.getTelefono(),
                 cliente.getTotalCompras(),
-                cliente.getNivel()
-        );
+                cliente.getNivel());
     }
 
     private List<DetalleVentaResponseDTO> mapDetalles(List<DetalleVenta> detalles) {
@@ -96,8 +93,7 @@ public class VentaController {
                 mapProducto(detalle.getProducto()),
                 detalle.getCantidad(),
                 detalle.getPrecioUnitario(),
-                detalle.getSubtotal()
-        );
+                detalle.getSubtotal());
     }
 
     private ProductoResponseDTO mapProducto(Producto producto) {
@@ -109,7 +105,6 @@ public class VentaController {
                 producto.getCategoria().getNombre(),
                 producto.getProveedor().getNombre(),
                 producto.getPrecioVenta(),
-                producto.getStockActual()
-        );
+                producto.getStockActual());
     }
 }
