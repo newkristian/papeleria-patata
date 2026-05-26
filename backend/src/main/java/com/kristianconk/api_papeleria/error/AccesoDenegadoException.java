@@ -2,15 +2,15 @@ package com.kristianconk.api_papeleria.error;
 
 public class AccesoDenegadoException extends RuntimeException {
 
-    public AccesoDenegadoException(String message) {
+    public AccesoDenegadoException(final String message) {
         super(message);
     }
 
-    public AccesoDenegadoException(String message, Throwable cause) {
+    public AccesoDenegadoException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
-    public AccesoDenegadoException(Throwable cause) {
+    public AccesoDenegadoException(final Throwable cause) {
         super(cause);
     }
 

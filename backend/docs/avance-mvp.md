@@ -110,9 +110,17 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 | `TipoMovimiento` | ENTRADA, SALIDA, AJUSTE |
 
 ### 1.6 Manejo de errores
-- ✅ `GlobalExceptionHandler` con handlers para `ResourceNotFoundException` y `AccesoDenegadoException`
-- ✅ `ErrorResponse` DTO estructurado
-- ❌ Sin handler para `IllegalArgumentException` ni `MethodArgumentNotValidException` (validación)
+- ✅ `GlobalExceptionHandler` robusto con control de excepciones e inyección de logs de auditoría.
+- ✅ `ErrorResponse` DTO estructurado para homologar las respuestas de error de la API.
+- ✅ Handlers específicos implementados para:
+  - `ResourceNotFoundException` (HTTP 404)
+  - `AccesoDenegadoException` (HTTP 403)
+  - `MethodArgumentNotValidException` (HTTP 400 - Validación de campos `@Valid` en DTOs)
+  - `IllegalArgumentException` (HTTP 400 - Argumentos incorrectos)
+  - `IllegalStateException` (HTTP 400 - Estados incorrectos)
+- ✅ Handler genérico de seguridad para `Exception.class` (HTTP 500) que evita fugas de trazas internas del servidor a clientes finales.
+- ✅ Integración completa con `@Slf4j` en `GlobalExceptionHandler` bajo la estructura homologada y directrices de `AGENTS.md`.
+
 
 ### 1.7 Migraciones Flyway
 | Versión | Contenido |
