@@ -7,6 +7,8 @@ import com.kristianconk.api_papeleria.enums.RolUsuario;
 import com.kristianconk.api_papeleria.security.jwt.JwtService;
 import com.kristianconk.api_papeleria.usuario.Usuario;
 import com.kristianconk.api_papeleria.usuario.UsuarioRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,7 +16,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
     private final UsuarioRepository userRepository;
@@ -23,35 +27,37 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
 
-    public AuthService(UsuarioRepository userRepository, PasswordEncoder passwordEncoder,
-                       JwtService jwtService, AuthenticationManager authenticationManager,
-                       UserDetailsService userDetailsService) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
-        this.authenticationManager = authenticationManager;
-        this.userDetailsService = userDetailsService;
-    }
+    public AuthResponse register(final RegisterRequest request) {
+        log.info("[POS/AuthService] - REGISTER: Registrando nuevo usuario con email: {}", request.getEmail());
 
-    public AuthResponse register(RegisterRequest request) {
-        // Asumiendo que tu entidad User implementa UserDetails
-        Usuario user = new Usuario();
+        final RolUsuario rol;
+        try {
+            rol = RolUsuario.valueOf(request.getRole().toUpperCase());
+        } catch (final IllegalArgumentException e) {
+            log.error("[POS/AuthService] - REGISTER: Rol inválido recibido: {}", request.getRole());
+            throw new IllegalArgumentException("El rol '" + request.getRole() + "' no es un rol válido del sistema.");
+        }
+
+        final Usuario user = new Usuario();
         user.setNombre(request.getNombre());
         user.setUsername(request.getEmail());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRol(RolUsuario.VENDEDOR);
+        user.setRol(rol);
+        user.setRequiereCambioPassword(true);
 
         userRepository.save(user);
 
-        String accessToken = jwtService.generateToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
+        final String accessToken = jwtService.generateToken(user);
+        final String refreshToken = jwtService.generateRefreshToken(user);
 
-        return new AuthResponse(accessToken, refreshToken);
+        log.info("[POS/AuthService] - REGISTER: Usuario registrado con éxito: {}", request.getEmail());
+        return new AuthResponse(accessToken, refreshToken, true);
     }
 
-    public AuthResponse login(LoginRequest request) {
-        // Esto lanzará una excepción si las credenciales son incorrectas
+    public AuthResponse login(final LoginRequest request) {
+        log.info("[POS/AuthService] - LOGIN: Autenticando usuario con email: {}", request.email());
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.email(),
@@ -59,27 +65,40 @@ public class AuthService {
                 )
         );
 
-        UserDetails user = userDetailsService.loadUserByUsername(request.email());
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(request.email());
 
-        String accessToken = jwtService.generateToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
+        final String accessToken = jwtService.generateToken(userDetails);
+        final String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-        return new AuthResponse(accessToken, refreshToken);
+        boolean requiereCambioPassword = false;
+        if (userDetails instanceof Usuario) {
+            requiereCambioPassword = ((Usuario) userDetails).isRequiereCambioPassword();
+        }
+
+        log.info("[POS/AuthService] - LOGIN: Usuario autenticado exitosamente: {}", request.email());
+        return new AuthResponse(accessToken, refreshToken, requiereCambioPassword);
     }
 
-    public AuthResponse refreshToken(String refreshToken) {
-        String userEmail = jwtService.extractUsername(refreshToken);
+    public AuthResponse refreshToken(final String refreshToken) {
+        log.info("[POS/AuthService] - REFRESH_TOKEN: Refrescando token");
+        final String userEmail = jwtService.extractUsername(refreshToken);
 
         if (userEmail != null) {
-            UserDetails user = userDetailsService.loadUserByUsername(userEmail);
+            final UserDetails user = userDetailsService.loadUserByUsername(userEmail);
 
-            // Validamos que el refresh token siga siendo válido y no haya expirado
             if (jwtService.isTokenValid(refreshToken, user)) {
-                String newAccessToken = jwtService.generateToken(user);
-                // Opcionalmente, puedes generar un nuevo refresh token aquí también (Refresh Token Rotation)
-                return new AuthResponse(newAccessToken, refreshToken);
+                final String newAccessToken = jwtService.generateToken(user);
+
+                boolean requiereCambioPassword = false;
+                if (user instanceof Usuario) {
+                    requiereCambioPassword = ((Usuario) user).isRequiereCambioPassword();
+                }
+
+                log.info("[POS/AuthService] - REFRESH_TOKEN: Token refrescado con éxito para usuario: {}", userEmail);
+                return new AuthResponse(newAccessToken, refreshToken, requiereCambioPassword);
             }
         }
-        throw new RuntimeException("Refresh token inválido");
+        log.error("[POS/AuthService] - REFRESH_TOKEN: Error al refrescar token, token inválido o expirado");
+        throw new IllegalArgumentException("Refresh token inválido");
     }
 }

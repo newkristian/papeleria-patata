@@ -85,15 +85,19 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
   - ❌ No hay endpoint para ventas del día.
 - **Repository**: ✅ 8 queries (ventas del día, por proveedor, estadísticas anónimas/registradas)
 
-#### Auth (~70% completo)
+#### Auth (~90% completo)
 - **Controller** (`/api/v1/auth`): ✅ Register, login, refresh-token
+  - ✅ Validación de request body con anotaciones de Bean Validation (`@Valid`)
+  - ✅ Solo usuarios `ADMINISTRADOR` pueden crear nuevos usuarios (protegido mediante `@PreAuthorize("hasRole('ADMINISTRADOR')")`)
 - **Service**:
   - ✅ Registro con encoding de password
   - ✅ Login con autenticación Spring Security
   - ✅ Refresh token
-  - ❌ Registro siempre asigna rol `VENDEDOR`, ignora `request.getRole()`
+  - ✅ Registro respeta el rol solicitado de forma exacta (`request.getRole()`)
+  - ✅ Adición del campo `requiereCambioPassword` en la creación de usuarios para forzar su actualización en el primer login, expuesto dinámicamente en el `AuthResponse`
   - ❌ Login usa `request.email()` pero `loadUserByUsername` busca por `username`
-- **DTOs**: ✅ LoginRequest (record), RegisterRequest (Lombok), AuthResponse (record)
+- **DTOs**: ✅ LoginRequest (record), RegisterRequest (Lombok refactorizado sin @Data y con validaciones), AuthResponse (record actualizado con requiereCambioPassword)
+
 
 #### Almacenamiento de archivos (~90% completo)
 - ✅ `FileSystemStorageService` con protección Path Traversal
@@ -140,9 +144,9 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 2. **[RESUELTO] `TiendaRepository` no extiende `JpaRepository`**
    - La interfaz ahora extiende `JpaRepository<Tienda, Long>` y se implementó todo el CRUD (Controller, Service, DTOs, Mapper) con control de acceso por roles.
 
-3. **`AuthService.register()` ignora el rol solicitado**
-   - Siempre asigna `RolUsuario.VENDEDOR`.
-   - **Impacto**: No se pueden crear admins ni gerentes vía API.
+3. **[RESUELTO] `AuthService.register()` ignora el rol solicitado**
+   - El método ahora mapea de manera dinámica y valida que el rol solicitado en el request pertenezca a los definidos en `RolUsuario` asignando el rol correcto al nuevo usuario. Adicionalmente, se protege el endpoint de registro en el controlador con `@PreAuthorize("hasRole('ADMINISTRADOR')")` para asegurar que solo usuarios administradores puedan crear nuevos usuarios.
+
 
 4. **[RESUELTO] Inconsistencia en rutas de API**
    - Se homologaron todas las rutas bajo `/api/v1` (`/api/v1/productos`, `/api/v1/ventas`, `/api/v1/auth`) y se configuró `SecurityConfig.java` utilizando el comodín `/api/v*/...` para soportar versiones dinámicamente.
@@ -163,7 +167,8 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 7. Solo existe 1 test (`contextLoads()`). Cero cobertura de unidad o integración (se configuró PostgreSQL en dev con `ddl-auto: validate` logrando que el test y la app arranquen exitosamente una vez levantado el contenedor de base de datos local).
 8. **[RESUELTO] No hay manejo de excepciones de validación (`@Valid`)**
    - Se agregaron las anotaciones `@Valid` en controlador, Bean Validation en DTOs (`VentaRequestDTO` y `DetalleVentaRequestDTO`) y su respectivo `@ExceptionHandler` global en `GlobalExceptionHandler.java` para responder de forma amigable con códigos HTTP 400.
-9. `RegisterRequest` usa Lombok `@Data`/`@Builder` en vez de record como los otros DTOs.
+9. **[RESUELTO] `RegisterRequest` usa Lombok `@Data`/`@Builder` en vez de record como los otros DTOs.**
+   - Se refactorizó eliminando `@Data` a favor de `@Getter` y `@Setter`, y se implementó `@Builder(setterPrefix = "with")` junto con sus respectivas validaciones.
 10. El `ProductoController` en el método `ajustarInventario` recibe `@AuthenticationPrincipal Usuario usuario` pero `Usuario` es una entidad JPA con `@Data` que puede causar problemas de serialización.
 
 ---
@@ -176,7 +181,7 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 | 1 | Arreglar `VentaService.crearVenta()` — mapear detalles desde DTO | 🔴 | ✅ RESUELTO |
 | 2 | Arreglar `TiendaRepository` — extender `JpaRepository<Tienda, Long>` | 🔴 | ✅ RESUELTO |
 | 3 | Arreglar `SecurityConfig` — mapear roles correctamente | 🔴 | ❌ PENDIENTE |
-| 4 | Arreglar `AuthService.register()` — respetar rol del request | 🔴 | ❌ PENDIENTE |
+| 4 | Arreglar `AuthService.register()` — respetar rol del request | 🔴 | ✅ RESUELTO |
 | 5 | Arreglar `AuthService.login()` — buscar por email/username correcto | 🟡 | ❌ PENDIENTE |
 | 6 | Persistir promociones en `VentaService` | 🟡 | ✅ RESUELTO |
 | 7 | Agregar `GlobalExceptionHandler` para validación y argumentos | 🟡 | ✅ RESUELTO |

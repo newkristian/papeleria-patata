@@ -6,7 +6,6 @@ import com.kristianconk.api_papeleria.tienda.Tienda;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -19,14 +18,18 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
-// Usuario.java
-@Data
-@Builder
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+@Builder(setterPrefix = "with")
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "usuarios")
 public class Usuario implements UserDetails {
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,6 +61,10 @@ public class Usuario implements UserDetails {
 
     @Builder.Default
     private boolean activo = true;
+
+    @Builder.Default
+    @Column(name = "requiere_cambio_password", nullable = false)
+    private boolean requiereCambioPassword = false;
 
     @CreationTimestamp
     private LocalDateTime fechaCreacion;
