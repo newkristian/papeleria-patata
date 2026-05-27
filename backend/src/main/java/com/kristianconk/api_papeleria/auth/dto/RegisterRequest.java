@@ -1,32 +1,27 @@
 package com.kristianconk.api_papeleria.auth.dto;
 
+import com.kristianconk.api_papeleria.enums.RolUsuario;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
-@Builder(setterPrefix = "with")
-@NoArgsConstructor
-@AllArgsConstructor
-public class RegisterRequest {
+public record RegisterRequest(
 
-    @NotBlank(message = "El nombre no puede estar vacío")
-    private String nombre;
+        @NotBlank(message = "El nombre no puede estar vacío") @Size(max = 100, message = "El nombre no puede exceder 100 caracteres") String nombre,
 
-    @NotBlank(message = "El email no puede estar vacío")
-    @Email(message = "El email debe ser una dirección válida")
-    private String email;
+        @NotBlank(message = "El email no puede estar vacío") @Email(message = "El email debe ser una dirección válida") @Size(max = 255, message = "El email no puede exceder 255 caracteres") String email,
 
-    @NotBlank(message = "La contraseña no puede estar vacía")
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
-    private String password;
+        @NotBlank(message = "La contraseña no puede estar vacía") @Size(min = 8, max = 72, message = "La contraseña debe tener entre 8 y 72 caracteres") @Pattern(regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).+$", message = "La contraseña debe contener mayúsculas, minúsculas y números") String password,
 
-    @NotBlank(message = "El rol no puede estar vacío")
-    private String role;
+        @NotNull(message = "El rol es obligatorio") RolUsuario role
+
+) {
+    @Override
+    public String toString() {
+        return "RegisterRequest[nombre=%s, email=%s, password=PROTECTED, role=%s]"
+                .formatted(nombre, email, role);
+    }
 }

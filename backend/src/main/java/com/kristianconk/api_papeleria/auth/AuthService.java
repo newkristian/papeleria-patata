@@ -3,7 +3,6 @@ package com.kristianconk.api_papeleria.auth;
 import com.kristianconk.api_papeleria.auth.dto.AuthResponse;
 import com.kristianconk.api_papeleria.auth.dto.LoginRequest;
 import com.kristianconk.api_papeleria.auth.dto.RegisterRequest;
-import com.kristianconk.api_papeleria.enums.RolUsuario;
 import com.kristianconk.api_papeleria.security.jwt.JwtService;
 import com.kristianconk.api_papeleria.usuario.Usuario;
 import com.kristianconk.api_papeleria.usuario.UsuarioRepository;
@@ -28,44 +27,34 @@ public class AuthService {
     private final UserDetailsService userDetailsService;
 
     public AuthResponse register(final RegisterRequest request) {
-        log.info("[POS/AuthService] - REGISTER: Registrando nuevo usuario con email: {}", request.getEmail());
-
-        final RolUsuario rol;
-        try {
-            rol = RolUsuario.valueOf(request.getRole().toUpperCase());
-        } catch (final IllegalArgumentException e) {
-            log.error("[POS/AuthService] - REGISTER: Rol inválido recibido: {}", request.getRole());
-            throw new IllegalArgumentException("El rol '" + request.getRole() + "' no es un rol válido del sistema.");
-        }
+        log.info("[POS/AuthService] - REGISTER: Registrando nuevo usuario con email: {}", request.email());
 
         final Usuario user = new Usuario();
-        user.setNombre(request.getNombre());
-        user.setUsername(request.getEmail());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRol(rol);
+        user.setNombre(request.nombre());
+        user.setUsername(request.email());
+        user.setEmail(request.email());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setRol(request.role());
         user.setRequiereCambioPassword(true);
 
         userRepository.save(user);
 
-        final String accessToken = jwtService.generateToken(user);
-        final String refreshToken = jwtService.generateRefreshToken(user);
+        final String accessToken = "";
+        final String refreshToken = "";
 
-        log.info("[POS/AuthService] - REGISTER: Usuario registrado con éxito: {}", request.getEmail());
+        log.info("[POS/AuthService] - REGISTER: Usuario registrado con éxito: {}", request.email());
         return new AuthResponse(accessToken, refreshToken, true);
     }
 
     public AuthResponse login(final LoginRequest request) {
-        log.info("[POS/AuthService] - LOGIN: Autenticando usuario con email: {}", request.email());
+        log.info("[POS/AuthService] - LOGIN: Autenticando usuario con username: {}", request.username());
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.email(),
-                        request.password()
-                )
-        );
+                        request.username(),
+                        request.password()));
 
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(request.email());
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(request.username());
 
         final String accessToken = jwtService.generateToken(userDetails);
         final String refreshToken = jwtService.generateRefreshToken(userDetails);
@@ -75,7 +64,7 @@ public class AuthService {
             requiereCambioPassword = ((Usuario) userDetails).isRequiereCambioPassword();
         }
 
-        log.info("[POS/AuthService] - LOGIN: Usuario autenticado exitosamente: {}", request.email());
+        log.info("[POS/AuthService] - LOGIN: Usuario autenticado exitosamente: {}", request.username());
         return new AuthResponse(accessToken, refreshToken, requiereCambioPassword);
     }
 
