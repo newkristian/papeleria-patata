@@ -64,9 +64,11 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
             @Param("termino") String termino,
             Pageable pageable);
 
-    // Conteo de productos por proveedor
     @Query("SELECT COUNT(p) FROM Producto p WHERE p.proveedor.id = :proveedorId")
     long countByProveedorId(@Param("proveedorId") Long proveedorId);
+
+    @Query("SELECT COUNT(p) FROM Producto p WHERE p.categoria.id = :categoriaId")
+    long countByCategoriaId(@Param("categoriaId") final Long categoriaId);
 
     // Productos más vendidos (para reportes)
     @Query("SELECT p, SUM(dv.cantidad) as totalVendido " +

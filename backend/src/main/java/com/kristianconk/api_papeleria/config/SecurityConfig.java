@@ -50,6 +50,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v*/ventas/**").hasAnyRole("ADMINISTRADOR", "VENDEDOR")
                         // Productos y catálogos: autenticado
                         .requestMatchers("/api/v*/productos/**").authenticated()
+                        // Categorías: lectura autenticado, escritura controlada por @PreAuthorize
+                        .requestMatchers("/api/v*/categorias/**").authenticated()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
