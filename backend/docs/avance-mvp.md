@@ -116,13 +116,27 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 
 #### Auth (~95% completo)
 - **Controller** (`/api/v1/auth`): ✅
-  - `POST /register` — registro de usuario (solo ADMINISTRADOR)
+  - `POST /register` — registro de usuario (solo ADMINISTRADOR, delega a `UsuarioService`)
   - `POST /login` — inicio de sesión con JWT + refresh token
   - `POST /refresh-token` — renovación de token
 - **Service**: ✅
   - Registro con `requiereCambioPassword = true` para nuevos usuarios
   - Login devuelve `requiereCambioPassword` en la respuesta
   - Refresh token con validación
+
+#### Usuarios (~100% completo)
+- **Controller** (`/api/v1/usuarios`): ✅
+  - `GET /` — listar todos los usuarios (solo ADMINISTRADOR)
+  - `GET /{id}` — obtener un usuario por ID (solo ADMINISTRADOR)
+  - `POST /` — crear un nuevo usuario (solo ADMINISTRADOR)
+  - `PUT /{id}` — actualizar datos de un usuario (solo ADMINISTRADOR)
+  - `PATCH /{id}/activar` — activar un usuario (solo ADMINISTRADOR)
+  - `PATCH /{id}/desactivar` — desactivar un usuario (solo ADMINISTRADOR)
+  - `POST /cambiar-password` — cambiar contraseña del usuario autenticado
+  - `PUT /{id}/reset-password` — restablecer contraseña de un usuario (solo ADMINISTRADOR)
+- **Service**: ✅ Con validaciones, encriptación, y control de estados (activo/inactivo)
+- **Mapper**: ✅ `UsuarioMapper` con métodos estáticos `toDto`, `toEntity`, `updateEntity`
+- **DTOs**: ✅ `UsuarioCreateRequestDTO`, `UsuarioUpdateRequestDTO`, `CambioPasswordRequestDTO`, `ResetPasswordRequestDTO`, `UsuarioResponseDTO`
 
 ---
 
@@ -155,7 +169,7 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 | **Clientes** | `ClienteController` + `ClienteService`: CRUD, búsqueda por teléfono |
 | **Tiendas** | ✅ CRUD completado con control de accesos (sólo Admin edita, resto consulta) |
 | **Proveedores** | `ProveedorController` + `ProveedorService`: CRUD, reporte de ventas por proveedor, cálculo de comisiones |
-| **Usuarios** | `UsuarioController` + `UsuarioService`: CRUD, cambio de contraseña, activación/desactivación |
+| **Usuarios** | ✅ CRUD completado, cambio de contraseña, activación/desactivación |
 | **Inventario** | `InventarioController` + `InventarioService`: historial de movimientos, entradas y salidas |
 | **Ventas** | Endpoints GET: listar ventas (paginado), ver detalle, ventas del día, cancelar venta, historial por cliente. El método `getVentasPorCliente` ya existe en el Service pero no está expuesto. |
 
@@ -204,11 +218,19 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 
 ---
 
-## 5. Recomendaciones
+## 5. Recomendaciones y Orden de Prioridad
 
-1. **Completar CRUDs básicos** antes de funcionalidad avanzada (reportes, corte de caja). Sin clientes, proveedores y usuarios, el sistema no es operable.
-2. **Exponer endpoints de consulta de ventas** — el método `getVentasPorCliente` ya existe en el Service pero no tiene endpoint.
-3. **Agregar tests** desde el inicio para evitar regresiones al agregar funcionalidad.
+Para lograr un MVP funcional desplegable, se recomienda abordar las tareas faltantes en el siguiente **orden de prioridad**:
+
+1. **Usuarios (Prioridad Crítica)**: ✅ Implementado `UsuarioController` y `UsuarioService`. Permite listar, crear, editar, activar/desactivar y cambiar/restablecer contraseñas de usuarios.
+2. **Proveedores (Prioridad Alta)**: Implementar `ProveedorController` y `ProveedorService`. Requerido para registrar productos correctamente.
+3. **Inventario (Prioridad Alta)**: Implementar `InventarioController` y `InventarioService`. Indispensable para dar entrada a las existencias (movimientos). Sin inventario positivo, el POS no permite vender.
+4. **Clientes (Prioridad Alta)**: Implementar `ClienteController` y `ClienteService`. Necesario para registrar ventas a clientes, aplicar descuentos y acumular historial para promociones VIP.
+5. **Ventas - Endpoints de Consulta (Prioridad Media)**: Exponer los endpoints GET faltantes en `VentaController` (listar, detalle, ventas del día, cancelar venta). El sistema ya crea ventas, pero no permite gestionarlas ni consultarlas.
+6. **Testing y Funciones Avanzadas (Prioridad Baja para MVP inicial)**: Añadir pruebas, devoluciones, corte de caja y reportes de comisiones.
+
+Adicionalmente, se sugiere:
+- **Agregar tests** progresivamente para evitar regresiones al agregar funcionalidad.
 
 ---
 
@@ -223,6 +245,7 @@ El proyecto tiene una **arquitectura bien pensada** y las **entidades correctame
 - ✅ **Migración Flyway V3**: agrega columna `requiere_cambio_password` a `usuarios`
 - ✅ **Flujo de cambio de contraseña**: usuarios nuevos registrados con `requiereCambioPassword = true`; `AuthResponse` incluye el flag para que el frontend fuerce el cambio
 - ✅ **CRUD de Categorías**: controller, service, mapper y DTOs implementados con seguridad (solo ADMINISTRADOR e INVENTARISTA crean/editan/eliminan)
+- ✅ **Optimización de Categorías**: Se eliminó el campo `cantidadProductos` del DTO de respuesta y se optimizó el servicio para evitar el problema de consultas N+1 (mejora de rendimiento).
 
 Sin embargo, **el núcleo del negocio (ventas) solo tiene el endpoint de creación**, y varios módulos de soporte (clientes, proveedores, usuarios, inventario) no tienen endpoints expuestos. Sin estos, no se puede operar el sistema completamente.
 

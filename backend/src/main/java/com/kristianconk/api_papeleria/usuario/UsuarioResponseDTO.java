@@ -7,6 +7,11 @@ public record UsuarioResponseDTO(
         String username,
         String nombre,
         String apellidos,
-        RolUsuario rol
+        String email,
+        RolUsuario rol,
+        Long tiendaId,
+        String tiendaNombre,
+        boolean activo,
+        boolean requiereCambioPassword
 ) {
 }

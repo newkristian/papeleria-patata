@@ -5,14 +5,14 @@ import com.kristianconk.api_papeleria.auth.dto.LoginRequest;
 import com.kristianconk.api_papeleria.auth.dto.RegisterRequest;
 import com.kristianconk.api_papeleria.security.jwt.JwtService;
 import com.kristianconk.api_papeleria.usuario.Usuario;
-import com.kristianconk.api_papeleria.usuario.UsuarioRepository;
+import com.kristianconk.api_papeleria.usuario.UsuarioCreateRequestDTO;
+import com.kristianconk.api_papeleria.usuario.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -20,8 +20,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UsuarioRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final UsuarioService usuarioService;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
@@ -29,15 +28,15 @@ public class AuthService {
     public AuthResponse register(final RegisterRequest request) {
         log.info("[POS/AuthService] - REGISTER: Registrando nuevo usuario con email: {}", request.email());
 
-        final Usuario user = new Usuario();
-        user.setNombre(request.nombre());
-        user.setUsername(request.email());
-        user.setEmail(request.email());
-        user.setPassword(passwordEncoder.encode(request.password()));
-        user.setRol(request.role());
-        user.setRequiereCambioPassword(true);
-
-        userRepository.save(user);
+        final UsuarioCreateRequestDTO createRequest = new UsuarioCreateRequestDTO(
+                request.nombre(),
+                null,
+                request.email(),
+                request.password(),
+                request.role(),
+                null
+        );
+        usuarioService.crear(createRequest);
 
         final String accessToken = "";
         final String refreshToken = "";

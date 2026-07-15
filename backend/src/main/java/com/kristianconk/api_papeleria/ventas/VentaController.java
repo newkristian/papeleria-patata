@@ -7,6 +7,7 @@ import com.kristianconk.api_papeleria.producto.ProductoResponseDTO;
 import com.kristianconk.api_papeleria.tienda.Tienda;
 import com.kristianconk.api_papeleria.tienda.TiendaResponseDTO;
 import com.kristianconk.api_papeleria.usuario.Usuario;
+import com.kristianconk.api_papeleria.usuario.UsuarioMapper;
 import com.kristianconk.api_papeleria.usuario.UsuarioResponseDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -56,12 +57,7 @@ public class VentaController {
     }
 
     private UsuarioResponseDTO mapUsuario(Usuario usuario) {
-        return new UsuarioResponseDTO(
-                usuario.getId(),
-                usuario.getUsername(),
-                usuario.getNombre(),
-                usuario.getApellidos(),
-                usuario.getRol());
+        return UsuarioMapper.toDto(usuario);
     }
 
     private TiendaResponseDTO mapTienda(final Tienda tienda) {
