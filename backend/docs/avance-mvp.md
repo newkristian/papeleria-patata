@@ -1,6 +1,6 @@
 # Reporte de Avance — Backend POS Papelería
 
-**Fecha**: 26 de mayo de 2026
+**Fecha**: 15 de julio de 2026
 **Stack**: Spring Boot 4.0.2, Java 21, PostgreSQL, JWT, Flyway, Docker
 **Objetivo**: Evaluar el avance real del backend y estimar lo que falta para un MVP funcional en servidor.
 
@@ -8,9 +8,9 @@
 
 ## Resumen Ejecutivo
 
-**Avance estimado**: ~55-60% del MVP.
+**Avance estimado**: ~65-70% del MVP.
 
-El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, entidades bien modeladas). Se ha homologado la API bajo el prefijo `/api/v1` y se completó de forma robusta la lógica de creación de ventas (`crearVenta`), incluyendo validación de stock, descuentos por porcentaje, roles, DTOs y la persistencia de promociones VIP en base de datos. El módulo de **Productos** es el más maduro (~85%). Los CRUDs de **Tiendas** y **Categorías** están completos. Faltan los CRUDs de Clientes, Proveedores, Usuarios e Inventario. No hay reportes, corte de caja, ni manejo de devoluciones.
+El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, entidades bien modeladas). Se ha homologado la API bajo el prefijo `/api/v1` y se completó de forma robusta la lógica de creación de ventas (`crearVenta`), incluyendo validación de stock, descuentos por porcentaje, roles, DTOs y la persistencia de promociones VIP en base de datos. El módulo de **Productos** es el más maduro (~85%). Los CRUDs de **Tiendas**, **Categorías** e **Inventario** están al 100% completos. Faltan los CRUDs de Clientes, Proveedores y la culminación del módulo de Ventas (consultas y cancelaciones). No hay reportes ni corte de caja.
 
 ---
 
@@ -75,6 +75,18 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
   - Manejo de fotos
 - **Repositorio**: ✅ Queries de búsqueda paginada, por código de barras, por categoría, por proveedor
 
+#### Inventario (~100% completo)
+- **Controller** (`/api/v1/inventario`): ✅
+  - `POST /entradas` — Registrar entrada manual de stock. Restringido por rol (Admin, Gerente, Inventarista).
+  - `POST /salidas` — Registrar salida manual de stock. Restringido por rol (Admin, Gerente, Inventarista) con validación de stock disponible.
+  - `GET /movimientos` — Listar bitácora histórica con filtros avanzados (producto, tipo, usuario, rango de fechas). Ofusca el costo unitario (`null`) si el rol del usuario autenticado es `VENDEDOR`.
+- **Service**: ✅
+  - Control de permisos y transaccionalidad.
+  - Lógica de no-reducción de costos de catálogo: si ingresa un producto con costo mayor, se actualiza en el catálogo y se recalcula el precio de venta; si es menor o igual, se conserva intacto el precio de catálogo. La bitácora histórica sí guarda el costo de adquisición real.
+  - Validación estricta de existencias en salidas.
+- **Repositorio**: ✅ JPQL dinámico para filtrado flexible.
+- **Mapper / DTOs**: ✅ Mapeo estático con opción condicional de ofuscación de costos.
+
 #### Ventas (~40% completo)
 - **Controller** (`/api/v1/ventas`): ⚠️ Solo endpoint POST
   - ✅ `POST /` — crear venta con validación de stock, descuentos, roles, promociones VIP
@@ -92,48 +104,21 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 
 #### Tiendas (~100% completo)
 - **Controller** (`/api/v1/tiendas`): ✅ CRUD completo
-  - `GET /` — listar todas
-  - `GET /{id}` — obtener por ID
-  - `POST /` — crear (solo ADMINISTRADOR)
-  - `PUT /{id}` — actualizar (solo ADMINISTRADOR)
-  - `DELETE /{id}` — eliminar (solo ADMINISTRADOR)
-  - Anotaciones OpenAPI completas
 - **Service**: ✅ Con logging estructurado y validaciones
 - **Mapper**: ✅ `TiendaMapper` con métodos estáticos `toDto`, `toEntity`, `updateEntity`
 
 #### Categorías (~100% completo)
 - **Controller** (`/api/v1/categorias`): ✅ CRUD completo
-  - `GET /` — listar todas (incluye cantidad de productos por categoría)
-  - `GET /{id}` — obtener por ID
-  - `POST /` — crear (solo ADMINISTRADOR e INVENTARISTA)
-  - `PUT /{id}` — actualizar (solo ADMINISTRADOR e INVENTARISTA)
-  - `DELETE /{id}` — eliminar (solo ADMINISTRADOR e INVENTARISTA, bloqueado si tiene productos)
-  - Anotaciones OpenAPI completas
-- **Service**: ✅ Con logging estructurado y validaciones
-  - Protección contra eliminación de categorías con productos asociados
+- **Service**: ✅ Con logging estructurado, validaciones y optimización contra N+1.
 - **Mapper**: ✅ `CategoriaMapper` con métodos estáticos `toDto`, `toEntity`, `updateEntity`
 - **DTOs**: ✅ `CategoriaRequestDTO` (validaciones), `CategoriaResponseDTO`
 
 #### Auth (~95% completo)
 - **Controller** (`/api/v1/auth`): ✅
-  - `POST /register` — registro de usuario (solo ADMINISTRADOR, delega a `UsuarioService`)
-  - `POST /login` — inicio de sesión con JWT + refresh token
-  - `POST /refresh-token` — renovación de token
 - **Service**: ✅
-  - Registro con `requiereCambioPassword = true` para nuevos usuarios
-  - Login devuelve `requiereCambioPassword` en la respuesta
-  - Refresh token con validación
 
 #### Usuarios (~100% completo)
 - **Controller** (`/api/v1/usuarios`): ✅
-  - `GET /` — listar todos los usuarios (solo ADMINISTRADOR)
-  - `GET /{id}` — obtener un usuario por ID (solo ADMINISTRADOR)
-  - `POST /` — crear un nuevo usuario (solo ADMINISTRADOR)
-  - `PUT /{id}` — actualizar datos de un usuario (solo ADMINISTRADOR)
-  - `PATCH /{id}/activar` — activar un usuario (solo ADMINISTRADOR)
-  - `PATCH /{id}/desactivar` — desactivar un usuario (solo ADMINISTRADOR)
-  - `POST /cambiar-password` — cambiar contraseña del usuario autenticado
-  - `PUT /{id}/reset-password` — restablecer contraseña de un usuario (solo ADMINISTRADOR)
 - **Service**: ✅ Con validaciones, encriptación, y control de estados (activo/inactivo)
 - **Mapper**: ✅ `UsuarioMapper` con métodos estáticos `toDto`, `toEntity`, `updateEntity`
 - **DTOs**: ✅ `UsuarioCreateRequestDTO`, `UsuarioUpdateRequestDTO`, `CambioPasswordRequestDTO`, `ResetPasswordRequestDTO`, `UsuarioResponseDTO`
@@ -143,12 +128,10 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 ## 2. Bugs y problemas críticos detectados
 
 ### 🔴 Críticos (bloquean funcionalidad core)
-
-**No se detectan bugs críticos activos.** El bug del `SecurityConfig` con roles fue corregido: ahora usa `.hasRole("ADMINISTRADOR")` y `.hasAnyRole("ADMINISTRADOR", "VENDEDOR")`, que coinciden correctamente con las authorities `ROLE_ADMINISTRADOR` y `ROLE_VENDEDOR` generadas por `Usuario.getAuthorities()`.
+**No se detectan bugs críticos activos.**
 
 ### 🟡 Medios/Bajos
-
-1. Solo existe 1 test (`contextLoads()`). Cero cobertura de unidad o integración (se configuró PostgreSQL en dev con `ddl-auto: validate` logrando que el test y la app arranquen exitosamente una vez levantado el contenedor de base de datos local).
+1. Cobertura de pruebas baja. Se inició con `InventarioServiceTest` (5 tests de cobertura Mockito), pero los módulos de productos, ventas, tiendas, categorías y usuarios carecen de tests unitarios o de integración.
 2. El `ProductoController` en el método `ajustarInventario` recibe `@AuthenticationPrincipal Usuario usuario` pero `Usuario` es una entidad JPA que puede causar problemas de serialización.
 
 ---
@@ -156,25 +139,19 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 ## 3. Lo que FALTA para un MVP funcional
 
 ### 3.1 Correcciones urgentes (requeridas para que funcione)
-
 | # | Tarea | Prioridad | Estado |
 |---|---|---|---|
 | — | Ningún bug crítico pendiente | — | ✅ |
 
 ### 3.2 Controladores y servicios faltantes
-
 | Módulo | ¿Qué falta? |
 |---|---|
-| **Categorías** | ✅ CRUD completado con control de accesos (Admin e Inventarista editan, resto consulta) |
 | **Clientes** | `ClienteController` + `ClienteService`: CRUD, búsqueda por teléfono |
-| **Tiendas** | ✅ CRUD completado con control de accesos (sólo Admin edita, resto consulta) |
 | **Proveedores** | `ProveedorController` + `ProveedorService`: CRUD, reporte de ventas por proveedor, cálculo de comisiones |
-| **Usuarios** | ✅ CRUD completado, cambio de contraseña, activación/desactivación |
-| **Inventario** | `InventarioController` + `InventarioService`: historial de movimientos, entradas y salidas |
+| **Inventario** | ✅ CRUD completado (entradas, salidas e historial con filtros dinámicos y ofuscación de costo) |
 | **Ventas** | Endpoints GET: listar ventas (paginado), ver detalle, ventas del día, cancelar venta, historial por cliente. El método `getVentasPorCliente` ya existe en el Service pero no está expuesto. |
 
 ### 3.3 Funcionalidad POS pendiente
-
 | Funcionalidad | Estado |
 |---|---|
 | Corte de caja (cierre de turno) | ❌ No implementado |
@@ -188,8 +165,8 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 | Bitácora de auditoría | ❌ No implementado |
 
 ### 3.4 Testing
-- Solo 1 test de contexto (`contextLoads`).
-- **Falta**: tests unitarios para servicios, tests de integración para controladores, tests de repositorios.
+- Pruebas unitarias para `InventarioService` (5 tests exitosos).
+- **Falta**: tests unitarios para otros servicios, tests de integración para controladores, tests de repositorios.
 
 ### 3.5 DevOps / Producción
 | Item | Estado |
@@ -199,7 +176,7 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 | docker-compose (app + PostgreSQL) | ❌ No existe |
 | Variables de entorno documentadas | ⚠️ Parcial (DB, JWT) |
 | Health check endpoint | ❌ No implementado |
-| Logging estructurado | ⚠️ Parcial (TiendaService usa `@Slf4j`, otros módulos no) |
+| Logging estructurado | ⚠️ Parcial |
 
 ---
 
@@ -207,14 +184,14 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 
 | Fase | Tareas | Esfuerzo estimado |
 |---|---|---|
-| **Controladores/Servicios faltantes** | 4 módulos × ~3-5 endpoints c/u | 3-5 días |
+| **Controladores/Servicios faltantes** | 2 módulos (Clientes, Proveedores) × ~3-5 endpoints | 2-3 días |
 | **Completar Ventas** | GETs, cancelación | 2-3 días |
 | **Reportes y dashboard** | Endpoints de estadísticas | 2-3 días |
 | **Corte de caja** | Lógica + endpoints | 1-2 días |
 | **Testing** | Unitarios + integración | 3-5 días |
 | **DevOps** | docker-compose, health checks, logging | 1-2 días |
 | **Documentación API** | Anotaciones Swagger en todos los controllers | 1 día |
-| **Total estimado** | | **11-20 días hábiles** |
+| **Total estimado** | | **11-19 días hábiles** |
 
 ---
 
@@ -222,35 +199,17 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 
 Para lograr un MVP funcional desplegable, se recomienda abordar las tareas faltantes en el siguiente **orden de prioridad**:
 
-1. **Usuarios (Prioridad Crítica)**: ✅ Implementado `UsuarioController` y `UsuarioService`. Permite listar, crear, editar, activar/desactivar y cambiar/restablecer contraseñas de usuarios.
-2. **Proveedores (Prioridad Alta)**: Implementar `ProveedorController` y `ProveedorService`. Requerido para registrar productos correctamente.
-3. **Inventario (Prioridad Alta)**: Implementar `InventarioController` y `InventarioService`. Indispensable para dar entrada a las existencias (movimientos). Sin inventario positivo, el POS no permite vender.
-4. **Clientes (Prioridad Alta)**: Implementar `ClienteController` y `ClienteService`. Necesario para registrar ventas a clientes, aplicar descuentos y acumular historial para promociones VIP.
-5. **Ventas - Endpoints de Consulta (Prioridad Media)**: Exponer los endpoints GET faltantes en `VentaController` (listar, detalle, ventas del día, cancelar venta). El sistema ya crea ventas, pero no permite gestionarlas ni consultarlas.
-6. **Testing y Funciones Avanzadas (Prioridad Baja para MVP inicial)**: Añadir pruebas, devoluciones, corte de caja y reportes de comisiones.
-
-Adicionalmente, se sugiere:
-- **Agregar tests** progresivamente para evitar regresiones al agregar funcionalidad.
+1. **Proveedores (Prioridad Alta)**: Implementar `ProveedorController` y `ProveedorService`. Requerido para registrar productos correctamente en el catálogo.
+2. **Clientes (Prioridad Alta)**: Implementar `ClienteController` y `ClienteService`. Necesario para registrar ventas a clientes, aplicar descuentos y acumular historial para promociones VIP.
+3. **Ventas - Endpoints de Consulta (Prioridad Media)**: Exponer los endpoints GET faltantes en `VentaController` (listar, detalle, ventas del día, cancelar venta). El sistema ya crea ventas, pero no permite gestionarlas ni consultarlas.
+4. **Testing y Funciones Avanzadas (Prioridad Baja para MVP inicial)**: Añadir pruebas, devoluciones, corte de caja y reportes de comisiones.
 
 ---
 
 ## 6. Conclusión
 
-El proyecto tiene una **arquitectura bien pensada** y las **entidades correctamente modeladas** para un sistema POS de papelería. La base de seguridad (JWT + Spring Security) está implementada y corregida. El módulo de productos está casi completo, y los CRUDs de tiendas y categorías están terminados.
+El proyecto tiene una **arquitectura bien pensada** y las **entidades correctamente modeladas** para un sistema POS de papelería. Los CRUDs de tiendas, categorías e inventario están terminados.
 
 **Cambios recientes (respecto al reporte del 22 de mayo de 2026)**:
-- ✅ **SecurityConfig corregido**: roles `ADMINISTRADOR` y `VENDEDOR` mapeados correctamente con `.hasRole()` / `.hasAnyRole()`
-- ✅ **Control de inventario en tiempo real**: `crearVenta` descuenta stock al vender
-- ✅ **Promociones VIP persistentes**: clientes con +$5,000 en compras suben a VIP y se guarda `PromocionCliente` en BD
-- ✅ **Migración Flyway V3**: agrega columna `requiere_cambio_password` a `usuarios`
-- ✅ **Flujo de cambio de contraseña**: usuarios nuevos registrados con `requiereCambioPassword = true`; `AuthResponse` incluye el flag para que el frontend fuerce el cambio
-- ✅ **CRUD de Categorías**: controller, service, mapper y DTOs implementados con seguridad (solo ADMINISTRADOR e INVENTARISTA crean/editan/eliminan)
-- ✅ **Optimización de Categorías**: Se eliminó el campo `cantidadProductos` del DTO de respuesta y se optimizó el servicio para evitar el problema de consultas N+1 (mejora de rendimiento).
-
-Sin embargo, **el núcleo del negocio (ventas) solo tiene el endpoint de creación**, y varios módulos de soporte (clientes, proveedores, usuarios, inventario) no tienen endpoints expuestos. Sin estos, no se puede operar el sistema completamente.
-
-**Para un MVP funcional mínimo desplegable en servidor, se requiere**:
-- Implementar CRUDs de clientes, proveedores, usuarios e inventario
-- Completar el flujo de ventas (crear, listar, ver detalle, cancelar)
-
-Con esto, se tendría un sistema POS básico operable. El resto (reportes, corte de caja, devoluciones) puede ir en una segunda fase.
+- ✅ **Módulo de Inventario implementado (Julio 2026)**: Se crearon `InventarioController`, `InventarioService`, mapper, DTOs y filtros avanzados de búsqueda. Cuenta con validaciones de existencias en salidas, lógica de no-reducción de costos de catálogo en entradas (solo aumentos) y ofuscación condicional del costo de compra si el usuario autenticado tiene rol de `VENDEDOR`.
+- ✅ **Pruebas unitarias para Inventario**: Se logró cobertura JUnit 5 con Mockito para el flujo de inventario (5 pruebas exitosas).
