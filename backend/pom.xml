@@ -99,7 +99,15 @@
             <version>0.12.5</version>
             <scope>runtime</scope>
         </dependency>
-        <!-- flyway para migracion DB -->
+        <!-- flyway para migracion DB. En Spring Boot 4 la autoconfiguración de
+             Flyway (FlywayAutoConfiguration) se movió a su propio starter: solo
+             tener el driver de flyway-database-postgresql en el classpath ya
+             no basta, sin este starter Flyway nunca se ejecuta y Hibernate
+             falla al validar el esquema (tablas "missing"). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
