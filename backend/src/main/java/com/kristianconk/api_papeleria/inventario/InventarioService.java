@@ -92,7 +92,7 @@ public class InventarioService {
             throw new IllegalArgumentException("El producto no está activo");
         }
 
-        if (producto.getStockActual() < request.cantidad()) {
+        if (!producto.isCantidadDesconocida() && producto.getStockActual() < request.cantidad()) {
             log.error("[POS/InventarioService] - REGISTRAR_SALIDA: stock insuficiente para productoId: {}, stock actual: {}, solicitado: {}, userId: {}", 
                     request.productoId(), producto.getStockActual(), request.cantidad(), usuario.getId());
             throw new IllegalArgumentException("Stock insuficiente para realizar la salida (Stock actual: " + producto.getStockActual() + ")");

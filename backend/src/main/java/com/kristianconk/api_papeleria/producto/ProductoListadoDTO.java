@@ -11,6 +11,7 @@ public record ProductoListadoDTO(
         Integer stockActual,
         Integer stockMinimo,
         boolean activo,
+        boolean cantidadDesconocida,
         String urlThumbnail,                    // URL del thumbnail para listados
         boolean tieneFotos                       // Indicador útil para el frontend
 ) {}

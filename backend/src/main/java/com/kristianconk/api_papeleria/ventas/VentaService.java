@@ -81,7 +81,7 @@ public class VentaService {
                 throw new IllegalArgumentException("El producto " + producto.getNombre() + " no está activo");
             }
 
-            if (producto.getStockActual() < detalleDTO.cantidad()) {
+            if (!producto.isCantidadDesconocida() && producto.getStockActual() < detalleDTO.cantidad()) {
                 throw new IllegalArgumentException("Stock insuficiente para el producto: " + producto.getNombre()
                         + " (Stock actual: " + producto.getStockActual() + ", solicitado: " + detalleDTO.cantidad() + ")");
             }

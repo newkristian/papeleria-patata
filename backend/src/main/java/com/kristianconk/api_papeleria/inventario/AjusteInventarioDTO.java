@@ -13,5 +13,7 @@ public record AjusteInventarioDTO(
         @NotBlank(message = "El motivo es obligatorio")
         String motivo,
 
-        Double nuevoCostoCompra // Opcional, si cambia el costo
+        Double nuevoCostoCompra, // Opcional, si cambia el costo
+
+        Boolean esFijarStockAbsoluto // Opcional, si es true se establece el stock en la cantidad y se apaga cantidadDesconocida
 ) {}

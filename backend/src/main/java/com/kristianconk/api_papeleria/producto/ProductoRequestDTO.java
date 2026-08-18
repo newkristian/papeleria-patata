@@ -33,11 +33,14 @@ public record ProductoRequestDTO(
         @PositiveOrZero(message = "El porcentaje de ganancia debe ser positivo o cero")
         Double porcentajeGananciaManual, // Opcional, si se quiere forzar un porcentaje
 
-        Boolean activo
+        Boolean activo,
+
+        Boolean cantidadDesconocida
 ) {
     public ProductoRequestDTO {
         // Validaciones adicionales
         if (stockMinimo == null) stockMinimo = 5;
         if (activo == null) activo = true;
+        if (cantidadDesconocida == null) cantidadDesconocida = false;
     }
 }

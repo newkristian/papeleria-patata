@@ -52,6 +52,10 @@ public class Producto {
 
     private boolean activo = true;
 
+    @Column(nullable = false)
+    private boolean cantidadDesconocida = false;
+
+
     // En Producto.java, agregar:
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orden ASC, fechaSubida DESC")

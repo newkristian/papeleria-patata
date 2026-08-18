@@ -22,6 +22,7 @@ public record ProductoDetalleDTO(
         Integer stockActual,
         String unidadMedida,
         boolean activo,
+        boolean cantidadDesconocida,
         LocalDateTime fechaCreacion,
         LocalDateTime fechaActualizacion,
         List<ProductoFotoDTO> fotos,           // Lista completa de fotos

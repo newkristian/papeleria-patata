@@ -72,6 +72,7 @@ public class ProductoService {
         producto.setCostoCompra(request.costoCompra());
         producto.setStockMinimo(request.stockMinimo());
         producto.setUnidadMedida(request.unidadMedida());
+        producto.setCantidadDesconocida(request.cantidadDesconocida());
 
         // Calcular porcentaje de ganancia
         if (request.porcentajeGananciaManual() != null) {
@@ -140,6 +141,9 @@ public class ProductoService {
         producto.setStockMinimo(request.stockMinimo());
         producto.setUnidadMedida(request.unidadMedida());
         producto.setActivo(request.activo());
+        if (request.cantidadDesconocida() != null) {
+            producto.setCantidadDesconocida(request.cantidadDesconocida());
+        }
 
         Producto productoActualizado = productoRepository.save(producto);
         return mapToDetalleDTO(productoActualizado);
@@ -173,7 +177,12 @@ public class ProductoService {
         }
 
         // Actualizar stock
-        producto.setStockActual(producto.getStockActual() + ajuste.cantidad());
+        if (Boolean.TRUE.equals(ajuste.esFijarStockAbsoluto())) {
+            producto.setStockActual(ajuste.cantidad());
+            producto.setCantidadDesconocida(false);
+        } else {
+            producto.setStockActual(producto.getStockActual() + ajuste.cantidad());
+        }
 
         inventarioMovimientoRepository.save(movimiento);
         Producto productoActualizado = productoRepository.save(producto);
@@ -298,6 +307,7 @@ public class ProductoService {
                 p.getStockActual(),
                 p.getStockMinimo(),
                 p.isActivo(),
+                p.isCantidadDesconocida(),
                 urlThumbnail,
                 tieneFotos
         );
@@ -331,6 +341,7 @@ public class ProductoService {
                 p.getStockActual(),
                 p.getUnidadMedida(),
                 p.isActivo(),
+                p.isCantidadDesconocida(),
                 p.getFechaCreacion(),
                 p.getFechaActualizacion(),
                 fotosDTO,
