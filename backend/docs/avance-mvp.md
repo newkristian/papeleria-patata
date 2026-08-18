@@ -158,7 +158,8 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 | Devoluciones / notas de crédito | ❌ No implementado |
 | Múltiples métodos de pago en una venta | ❌ Solo un método por venta |
 | Impresión de ticket (integración) | ❌ No implementado |
-| Control de inventario en tiempo real al vender | ✅ Implementado en `crearVenta` |
+| Control de inventario en tiempo real al vender | ✅ Implementado en `crearVenta` (Soporta productos con "cantidad desconocida") |
+| **Inventario Progresivo (Cantidad Desconocida)** | ✅ Implementado (Bandera `cantidadDesconocida` en BD/Entidades habilitada) |
 | Descuentos y promociones automáticas | ✅ Promociones VIP persistentes implementadas |
 | Historial de precios | ❌ No implementado |
 | Reportes de comisiones por proveedor | ❌ Solo query en repo, sin servicio |
@@ -191,7 +192,7 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 | **Testing** | Unitarios + integración | 3-5 días |
 | **DevOps** | docker-compose, health checks, logging | 1-2 días |
 | **Documentación API** | Anotaciones Swagger en todos los controllers | 1 día |
-| **Total estimado** | | **11-19 días hábiles** |
+| **Total estimado** | | **12-21 días hábiles** |
 
 ---
 
@@ -199,10 +200,11 @@ El proyecto tiene una base arquitectónica sólida (Spring Boot, seguridad JWT, 
 
 Para lograr un MVP funcional desplegable, se recomienda abordar las tareas faltantes en el siguiente **orden de prioridad**:
 
-1. **Proveedores (Prioridad Alta)**: Implementar `ProveedorController` y `ProveedorService`. Requerido para registrar productos correctamente en el catálogo.
-2. **Clientes (Prioridad Alta)**: Implementar `ClienteController` y `ClienteService`. Necesario para registrar ventas a clientes, aplicar descuentos y acumular historial para promociones VIP.
-3. **Ventas - Endpoints de Consulta (Prioridad Media)**: Exponer los endpoints GET faltantes en `VentaController` (listar, detalle, ventas del día, cancelar venta). El sistema ya crea ventas, pero no permite gestionarlas ni consultarlas.
-4. **Testing y Funciones Avanzadas (Prioridad Baja para MVP inicial)**: Añadir pruebas, devoluciones, corte de caja y reportes de comisiones.
+1. ~~**Inventario Progresivo (Prioridad Crítica/Alta)**: Modificar lógica para permitir "cantidad desconocida".~~ ✅ **¡Completado!**
+2. **Proveedores (Prioridad Alta)**: Implementar `ProveedorController` y `ProveedorService`. Requerido para registrar productos correctamente en el catálogo.
+3. **Clientes (Prioridad Alta)**: Implementar `ClienteController` y `ClienteService`. Necesario para registrar ventas a clientes, aplicar descuentos y acumular historial para promociones VIP.
+4. **Ventas - Endpoints de Consulta (Prioridad Media)**: Exponer los endpoints GET faltantes en `VentaController` (listar, detalle, ventas del día, cancelar venta). El sistema ya crea ventas, pero no permite gestionarlas ni consultarlas.
+5. **Testing y Funciones Avanzadas (Prioridad Baja para MVP inicial)**: Añadir pruebas, devoluciones, corte de caja y reportes de comisiones.
 
 ---
 

@@ -122,6 +122,22 @@ public class VentaService {
     }
 
     @Transactional(readOnly = true)
+    public List<Venta> getAllVentas() {
+        return ventaRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public Venta getVentaById(final Long id) {
+        return ventaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con ID: " + id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Venta> getVentasDelDia(final Long tiendaId) {
+        return ventaRepository.findVentasDelDia(tiendaId, LocalDate.now());
+    }
+
+    @Transactional(readOnly = true)
     public List<Venta> getVentasPorCliente(final Long clienteId) {
         if (clienteId == 1L) {
             return ventaRepository.findByVentaAnonimaTrue();

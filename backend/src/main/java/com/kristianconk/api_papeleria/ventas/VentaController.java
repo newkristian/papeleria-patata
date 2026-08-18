@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +39,35 @@ public class VentaController {
         final Venta ventaCreada = ventaService.crearVenta(ventaDTO, usuario);
         final VentaResponseDTO response = mapToResponseDTO(ventaCreada);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<VentaResponseDTO>> getAllVentas() {
+        return ResponseEntity.ok(ventaService.getAllVentas().stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList()));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<VentaResponseDTO> getVentaById(@PathVariable Long id) {
+        return ResponseEntity.ok(mapToResponseDTO(ventaService.getVentaById(id)));
+    }
+
+    @GetMapping("/dia")
+    public ResponseEntity<List<VentaResponseDTO>> getVentasDelDia(@AuthenticationPrincipal Usuario usuario) {
+        if (usuario.getTienda() == null) {
+            throw new IllegalArgumentException("El usuario no tiene una tienda asignada");
+        }
+        return ResponseEntity.ok(ventaService.getVentasDelDia(usuario.getTienda().getId()).stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList()));
+    }
+
+    @GetMapping("/cliente/{clienteId}")
+    public ResponseEntity<List<VentaResponseDTO>> getVentasPorCliente(@PathVariable Long clienteId) {
+        return ResponseEntity.ok(ventaService.getVentasPorCliente(clienteId).stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList()));
     }
 
     private VentaResponseDTO mapToResponseDTO(Venta venta) {
