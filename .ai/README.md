@@ -57,6 +57,11 @@ Consultar también:
 
 cuando sea necesario aclarar términos utilizados por estas guías.
 
+- `.ai/core/auto_mode.md`
+
+cuando el propietario indique explícitamente que se trabajará en modo
+automático para una tarea o sesión.
+
 Las reglas de `/core` tienen prioridad sobre las reglas específicas de tecnología.
 
 ---

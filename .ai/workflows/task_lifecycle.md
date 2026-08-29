@@ -61,6 +61,12 @@ El propietario deberá poder:
 
 El agente no deberá realizar commits salvo instrucción explícita.
 
+Si el propietario activó explícitamente el modo automático descrito en
+`.ai/core/auto_mode.md` para la tarea o sesión actual, esta pausa puede
+omitirse **únicamente** para tareas dentro del alcance de bajo riesgo
+definido en ese documento. Fuera de ese alcance, la pausa sigue siendo
+obligatoria.
+
 ---
 
 # Fase 6 — Continuación
