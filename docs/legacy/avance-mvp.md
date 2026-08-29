@@ -1,3 +1,9 @@
+> [!CAUTION]
+> **DOCUMENTO OBSOLETO.** Este archivo se conserva únicamente como registro
+> histórico. No debe utilizarse como fuente de información, planeación ni estado
+> actual del proyecto. Su contenido puede contradecir la implementación vigente y
+> está sujeto a eliminación posterior. Consulta `docs/requerimientos/`.
+
 # Reporte de Avance — Backend POS Papelería
 
 **Fecha**: 15 de julio de 2026
