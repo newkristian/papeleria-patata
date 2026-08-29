@@ -2,6 +2,7 @@ package com.kristianconk.api_papeleria.ventas;
 
 import com.kristianconk.api_papeleria.cliente.Cliente;
 import com.kristianconk.api_papeleria.cliente.ClienteRepository;
+import com.kristianconk.api_papeleria.cliente.PromocionCliente;
 import com.kristianconk.api_papeleria.cliente.PromocionClienteRepository;
 import com.kristianconk.api_papeleria.enums.MetodoPago;
 import com.kristianconk.api_papeleria.enums.RolUsuario;
@@ -127,5 +128,33 @@ class VentaServiceTest {
         assertEquals(20, producto.getStockActual());
         verify(productoRepository, never()).save(any(Producto.class));
         verify(ventaRepository, never()).save(any(Venta.class));
+    }
+
+    @Test
+    void crearVenta_clienteSuperaUmbralAcumulaTotalExactoYCreaPromocionVip() {
+        final Cliente cliente = new Cliente();
+        cliente.setId(2L);
+        cliente.setNombre("Cliente registrado");
+        cliente.setNivel("Regular");
+        cliente.setTotalCompras(new BigDecimal("4990.00"));
+
+        final VentaRequestDTO request = new VentaRequestDTO(
+                2L,
+                MetodoPago.EFECTIVO,
+                List.of(new DetalleVentaRequestDTO(10L, 2)));
+
+        when(folioGenerador.generarFolio()).thenReturn("V-0003");
+        when(clienteRepository.findById(2L)).thenReturn(Optional.of(cliente));
+        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(ventaRepository.save(any(Venta.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ventaService.crearVenta(request, vendedor);
+
+        assertEquals(new BigDecimal("5050.00"), cliente.getTotalCompras());
+        assertEquals("VIP", cliente.getNivel());
+
+        final ArgumentCaptor<PromocionCliente> promocionCaptor = ArgumentCaptor.forClass(PromocionCliente.class);
+        verify(promocionClienteRepository).save(promocionCaptor.capture());
+        assertEquals(new BigDecimal("10.00"), promocionCaptor.getValue().getPorcentajeDescuento());
     }
 }

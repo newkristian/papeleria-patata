@@ -3,6 +3,7 @@ package com.kristianconk.api_papeleria.proveedor;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 // PagoProveedor.java
@@ -24,14 +25,14 @@ public class PagoProveedor {
     @Column(nullable = false)
     private LocalDate fechaFin;
 
-    @Column(nullable = false)
-    private Double totalVentas;
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal totalVentas;
 
-    @Column(nullable = false)
-    private Double comisionTienda;
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal comisionTienda;
 
-    @Column(nullable = false)
-    private Double montoPagar; // totalVentas - comisionTienda
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal montoPagar; // totalVentas - comisionTienda
 
     @Column(nullable = false)
     private LocalDate fechaPago;

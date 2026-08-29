@@ -12,6 +12,8 @@ un periodo definido.
 
 - Existe una consulta de ventas agrupadas por producto y proveedor.
 - Existen DTOs preliminares de reporte y porcentaje de comisión en el proveedor.
+- Los montos del reporte, pagos y comisiones usan `BigDecimal`; Flyway V6 los
+  persiste como `NUMERIC` con dos decimales y restricciones no negativas.
 
 ## Pendientes conocidos
 

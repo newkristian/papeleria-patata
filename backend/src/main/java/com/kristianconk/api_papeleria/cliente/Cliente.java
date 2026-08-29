@@ -4,6 +4,7 @@ import com.kristianconk.api_papeleria.ventas.Venta;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +25,8 @@ public class Cliente {
     private String email;
     private LocalDate fechaRegistro;
 
-    @Column(nullable = false)
-    private Double totalCompras = 0.0;
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal totalCompras = BigDecimal.ZERO;
 
     private String nivel; // Regular, Frecuente, VIP
 

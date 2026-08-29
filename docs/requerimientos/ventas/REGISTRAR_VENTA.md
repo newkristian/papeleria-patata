@@ -13,13 +13,14 @@ promociones, descuentos autorizados y afectación de inventario.
 - `POST /api/v1/ventas` crea la venta y descuenta inventario.
 - Valida producto activo, stock conocido, tienda y una restricción preliminar de
   acceso por rol.
-- Acumula compras del cliente y genera promoción VIP al superar el umbral.
+- Acumula con precisión decimal exacta las compras del cliente y genera una
+  promoción VIP al superar el umbral.
 - El request solo identifica producto y cantidad; el precio se obtiene del catálogo
   persistido.
 - Las ventas se registran temporalmente sin descuento hasta implementar el motor de
   promociones y la autorización manual.
-- Los importes de Producto, Venta y DetalleVenta utilizan `BigDecimal` y columnas
-  `NUMERIC` con dos decimales.
+- Los importes de Producto, Venta, DetalleVenta y el acumulado del cliente utilizan
+  `BigDecimal` y columnas `NUMERIC` con dos decimales.
 - Cada detalle conserva precio de lista, tipo y monto de descuento, precio final,
   autorizador, motivo y subtotal. Los campos de descuento se inicializan como
   `NINGUNO` y cero durante esta etapa.
@@ -28,8 +29,6 @@ promociones, descuentos autorizados y afectación de inventario.
 
 - Implementar promociones calculadas por producto y autorizaciones manuales de un
   solo uso.
-- Migrar `Cliente.totalCompras` a `BigDecimal` en la Tarea 2B y retirar la conversión
-  temporal utilizada al acumular compras.
 - Añadir pruebas de atomicidad, precios, roles, descuentos, stock y promociones.
 - Revisar el comportamiento de stock para productos con cantidad desconocida.
 

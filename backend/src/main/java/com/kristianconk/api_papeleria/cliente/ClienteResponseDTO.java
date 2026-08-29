@@ -1,10 +1,12 @@
 package com.kristianconk.api_papeleria.cliente;
 
+import java.math.BigDecimal;
+
 public record ClienteResponseDTO(
         Long id,
         String nombre,
         String telefono,
-        Double totalCompras,
+        BigDecimal totalCompras,
         String nivel
 ) {
     // Constructor para cliente anónimo
@@ -13,7 +15,7 @@ public record ClienteResponseDTO(
                 1L,
                 "PÚBLICO GENERAL",
                 "ANÓNIMO",
-                0.0,
+                BigDecimal.ZERO,
                 "ANÓNIMO"
         );
     }

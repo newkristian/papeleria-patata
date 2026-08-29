@@ -3,6 +3,7 @@ package com.kristianconk.api_papeleria.cliente;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 // PromocionCliente.java
@@ -21,9 +22,14 @@ public class PromocionCliente {
     @Column(nullable = false)
     private String descripcion;
 
-    private Double porcentajeDescuento;
-    private Double montoMinimoCompra;
-    private Double montoDescuentoFijo;
+    @Column(precision = 5, scale = 2)
+    private BigDecimal porcentajeDescuento;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal montoMinimoCompra;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal montoDescuentoFijo;
 
     @Column(nullable = false)
     private LocalDate fechaInicio;

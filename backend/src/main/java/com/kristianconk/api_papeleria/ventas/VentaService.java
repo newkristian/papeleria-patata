@@ -28,6 +28,8 @@ import java.util.List;
 public class VentaService {
 
     private static final int ESCALA_MONETARIA = 2;
+    private static final BigDecimal UMBRAL_CLIENTE_VIP = new BigDecimal("5000.00");
+    private static final BigDecimal DESCUENTO_CLIENTE_VIP = new BigDecimal("10.00");
 
     private final VentaRepository ventaRepository;
     private final ClienteRepository clienteRepository;
@@ -120,8 +122,7 @@ public class VentaService {
 
         if (!ventaGuardada.isVentaAnonima() && ventaGuardada.getCliente() != null) {
             final Cliente cliente = ventaGuardada.getCliente();
-            final BigDecimal totalComprasActual = BigDecimal.valueOf(cliente.getTotalCompras());
-            cliente.setTotalCompras(totalComprasActual.add(ventaGuardada.getTotal()).doubleValue());
+            cliente.setTotalCompras(cliente.getTotalCompras().add(ventaGuardada.getTotal()));
             clienteRepository.save(cliente);
             verificarPromocionesCliente(cliente);
         }
@@ -154,12 +155,13 @@ public class VentaService {
     }
 
     private void verificarPromocionesCliente(final Cliente cliente) {
-        if (cliente.getTotalCompras() > 5000.0 && "Regular".equals(cliente.getNivel())) {
+        if (cliente.getTotalCompras().compareTo(UMBRAL_CLIENTE_VIP) > 0
+                && "Regular".equals(cliente.getNivel())) {
             cliente.setNivel("VIP");
             final PromocionCliente promocion = new PromocionCliente();
             promocion.setCliente(cliente);
             promocion.setDescripcion("Cliente VIP - 10% de descuento en todas sus compras");
-            promocion.setPorcentajeDescuento(10.0);
+            promocion.setPorcentajeDescuento(DESCUENTO_CLIENTE_VIP);
             promocion.setFechaInicio(LocalDate.now());
             promocion.setFechaFin(LocalDate.now().plusMonths(6));
             promocionClienteRepository.save(promocion);

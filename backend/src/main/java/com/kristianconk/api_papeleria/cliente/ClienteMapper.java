@@ -26,7 +26,7 @@ public class ClienteMapper {
         cliente.setTelefono(request.telefono());
         cliente.setEmail(request.email());
         cliente.setFechaRegistro(java.time.LocalDate.now());
-        cliente.setTotalCompras(0.0);
+        cliente.setTotalCompras(java.math.BigDecimal.ZERO);
         cliente.setNivel("Regular");
         return cliente;
     }
