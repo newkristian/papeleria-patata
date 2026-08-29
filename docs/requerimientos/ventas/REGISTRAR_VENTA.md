@@ -12,15 +12,17 @@ promociones, descuentos autorizados y afectación de inventario.
 
 - `POST /api/v1/ventas` crea la venta y descuenta inventario.
 - Valida producto activo, stock conocido, tienda y una restricción preliminar de
-  descuento global.
+  acceso por rol.
 - Acumula compras del cliente y genera promoción VIP al superar el umbral.
+- El request solo identifica producto y cantidad; el precio se obtiene del catálogo
+  persistido.
+- Las ventas se registran temporalmente sin descuento hasta implementar el motor de
+  promociones y la autorización manual.
 
-## Pendientes críticos
+## Pendientes conocidos
 
-- El backend usa el `precioUnitario` enviado por el cliente; debe obtener el precio
-  autorizado del catálogo para impedir manipulación del total.
-- El descuento actual es global y enviado por el cliente; debe sustituirse por
-  promociones calculadas por producto y autorizaciones manuales de un solo uso.
+- Implementar promociones calculadas por producto y autorizaciones manuales de un
+  solo uso.
 - Añadir pruebas de atomicidad, precios, roles, descuentos, stock y promociones.
 - Revisar el comportamiento de stock para productos con cantidad desconocida.
 

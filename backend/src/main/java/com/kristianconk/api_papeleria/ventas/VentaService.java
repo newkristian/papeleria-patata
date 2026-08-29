@@ -36,10 +36,6 @@ public class VentaService {
             throw new AccesoDenegadoException("El rol INVENTARISTA no tiene permisos para crear ventas");
         }
 
-        if (usuario.getRol() == RolUsuario.VENDEDOR && ventaDTO.descuento() > 10.0) {
-            throw new AccesoDenegadoException("Vendedor no puede aplicar descuentos mayores al 10%");
-        }
-
         if (usuario.getTienda() == null) {
             throw new IllegalArgumentException("El usuario no tiene una tienda asignada para realizar ventas");
         }
@@ -81,6 +77,12 @@ public class VentaService {
                 throw new IllegalArgumentException("El producto " + producto.getNombre() + " no está activo");
             }
 
+            final Double precioCatalogo = producto.getPrecioVenta();
+            if (precioCatalogo == null || !Double.isFinite(precioCatalogo) || precioCatalogo <= 0.0) {
+                throw new IllegalStateException(
+                        "El producto " + producto.getNombre() + " no tiene un precio de venta válido");
+            }
+
             if (!producto.isCantidadDesconocida() && producto.getStockActual() < detalleDTO.cantidad()) {
                 throw new IllegalArgumentException("Stock insuficiente para el producto: " + producto.getNombre()
                         + " (Stock actual: " + producto.getStockActual() + ", solicitado: " + detalleDTO.cantidad() + ")");
@@ -93,9 +95,9 @@ public class VentaService {
             detalle.setVenta(venta);
             detalle.setProducto(producto);
             detalle.setCantidad(detalleDTO.cantidad());
-            detalle.setPrecioUnitario(detalleDTO.precioUnitario());
+            detalle.setPrecioUnitario(precioCatalogo);
 
-            final double detalleSubtotal = detalleDTO.cantidad() * detalleDTO.precioUnitario();
+            final double detalleSubtotal = detalleDTO.cantidad() * precioCatalogo;
             detalle.setSubtotal(detalleSubtotal);
             subtotalAcumulado += detalleSubtotal;
 
@@ -104,10 +106,8 @@ public class VentaService {
 
         venta.setDetalles(detalles);
         venta.setSubtotal(subtotalAcumulado);
-
-        final double descuentoMonto = subtotalAcumulado * (ventaDTO.descuento() / 100.0);
-        venta.setDescuento(descuentoMonto);
-        venta.setTotal(subtotalAcumulado - descuentoMonto);
+        venta.setDescuento(0.0);
+        venta.setTotal(subtotalAcumulado);
 
         final Venta ventaGuardada = ventaRepository.save(venta);
 
