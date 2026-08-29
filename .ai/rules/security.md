@@ -1,0 +1,143 @@
+# Seguridad
+
+La seguridad tiene prioridad máxima según `.ai/core/priorities.md`.
+
+---
+
+# Autenticación
+
+El sistema utiliza autenticación basada en JWT.
+
+Los tokens deberán:
+
+- tener expiración;
+- ser firmados utilizando algoritmos seguros;
+- ser validados completamente en backend.
+
+Nunca aceptar un JWT únicamente porque pueda decodificarse.
+
+Verificar como mínimo:
+
+- firma;
+- expiración;
+- claims requeridos.
+
+---
+
+# Autorización
+
+Autenticación y autorización son responsabilidades diferentes.
+
+Un usuario autenticado no obtiene automáticamente acceso a todos los recursos.
+
+La autorización deberá realizarse en backend.
+
+Preferir autorización cerca de la capa de aplicación mediante mecanismos como:
+
+```java
+@PreAuthorize(...)
+```
+
+cuando resulte apropiado.
+
+No depender exclusivamente del Controller para proteger reglas críticas de
+negocio.
+
+---
+
+# Control de acceso a recursos
+
+Verificar que el usuario tenga autorización sobre el recurso solicitado.
+
+Nunca asumir que conocer un ID implica autorización para acceder al recurso.
+
+Prevenir vulnerabilidades IDOR/BOLA.
+
+---
+
+# Validación
+
+Toda entrada externa debe considerarse no confiable.
+
+Validar:
+
+- body;
+- parámetros;
+- path variables;
+- archivos;
+- datos provenientes de sistemas externos.
+
+---
+
+# SQL
+
+Utilizar parámetros mediante JPA o consultas parametrizadas.
+
+Nunca construir SQL concatenando datos proporcionados por usuarios.
+
+---
+
+# XSS
+
+No insertar contenido proporcionado por usuarios como HTML sin sanitización.
+
+Evitar mecanismos que permitan renderizar HTML arbitrario en Angular.
+
+---
+
+# CORS
+
+Configurar explícitamente los orígenes permitidos.
+
+No utilizar:
+
+Access-Control-Allow-Origin: *
+
+en producción cuando existan endpoints autenticados.
+
+---
+
+# Secretos
+
+Nunca almacenar en el repositorio:
+
+- contraseñas;
+- claves JWT;
+- tokens;
+- credenciales de base de datos;
+- API keys.
+
+Utilizar variables de entorno o mecanismos equivalentes.
+
+---
+
+# Logs
+
+Nunca registrar:
+
+- contraseñas;
+- JWT completos;
+- secretos;
+- números completos de tarjetas;
+- datos sensibles innecesarios.
+
+---
+
+# Errores
+
+Las respuestas HTTP no deberán exponer:
+
+- stack traces;
+- SQL;
+- rutas internas;
+- secretos;
+- detalles de infraestructura.
+
+---
+
+# Dependencias
+
+No agregar dependencias conocidas como vulnerables.
+
+Una actualización necesaria por una vulnerabilidad crítica tiene prioridad
+sobre las restricciones normales de actualización de dependencias.
