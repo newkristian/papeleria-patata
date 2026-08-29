@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -53,8 +54,8 @@ class InventarioServiceTest {
         productoMock.setNombre("Cuaderno Profesional");
         productoMock.setCodigoBarras("750103504821");
         productoMock.setStockActual(5);
-        productoMock.setCostoCompra(20.0);
-        productoMock.setPorcentajeGanancia(50.0);
+        productoMock.setCostoCompra(new BigDecimal("20.00"));
+        productoMock.setPorcentajeGanancia(new BigDecimal("50.00"));
         productoMock.setActivo(true);
     }
 
@@ -62,7 +63,7 @@ class InventarioServiceTest {
     void registrarEntrada_aumentoCosto_actualizaProducto() {
         // Given
         final InventarioMovimientoRequestDTO request = new InventarioMovimientoRequestDTO(
-                10L, 10, "Compra proveedores julio", 25.0);
+                10L, 10, "Compra proveedores julio", new BigDecimal("25.00"));
 
         when(productoRepository.findById(10L)).thenReturn(Optional.of(productoMock));
         when(inventarioMovimientoRepository.save(any(InventarioMovimiento.class))).thenAnswer(invocation -> {
@@ -79,14 +80,14 @@ class InventarioServiceTest {
         assertEquals(100L, resultado.getId());
         assertEquals(TipoMovimiento.ENTRADA, resultado.getTipo());
         assertEquals(10, resultado.getCantidad());
-        assertEquals(25.0, resultado.getCostoUnitario());
+        assertEquals(new BigDecimal("25.00"), resultado.getCostoUnitario());
 
         // Verificamos que el stock subió: 5 + 10 = 15
         assertEquals(15, productoMock.getStockActual());
         // Verificamos que el costo subió: de 20.0 a 25.0
-        assertEquals(25.0, productoMock.getCostoCompra());
+        assertEquals(new BigDecimal("25.00"), productoMock.getCostoCompra());
         // 25.0 < 50.0 -> porcentaje de ganancia debe ser 50.0
-        assertEquals(50.0, productoMock.getPorcentajeGanancia());
+        assertEquals(new BigDecimal("50.00"), productoMock.getPorcentajeGanancia());
 
         verify(productoRepository).save(productoMock);
         verify(inventarioMovimientoRepository).save(any(InventarioMovimiento.class));
@@ -96,7 +97,7 @@ class InventarioServiceTest {
     void registrarEntrada_disminucionCosto_noActualizaProducto() {
         // Given
         final InventarioMovimientoRequestDTO request = new InventarioMovimientoRequestDTO(
-                10L, 15, "Compra barata liquidación", 18.0);
+                10L, 15, "Compra barata liquidación", new BigDecimal("18.00"));
 
         when(productoRepository.findById(10L)).thenReturn(Optional.of(productoMock));
         when(inventarioMovimientoRepository.save(any(InventarioMovimiento.class))).thenAnswer(invocation -> {
@@ -112,12 +113,12 @@ class InventarioServiceTest {
         assertNotNull(resultado);
         assertEquals(101L, resultado.getId());
         // El movimiento de inventario guarda el costo real pagado (18.0)
-        assertEquals(18.0, resultado.getCostoUnitario());
+        assertEquals(new BigDecimal("18.00"), resultado.getCostoUnitario());
 
         // El stock subió: 5 + 15 = 20
         assertEquals(20, productoMock.getStockActual());
         // El costo de catálogo NO se reduce (sigue en 20.0)
-        assertEquals(20.0, productoMock.getCostoCompra());
+        assertEquals(new BigDecimal("20.00"), productoMock.getCostoCompra());
 
         verify(productoRepository).save(productoMock);
         verify(inventarioMovimientoRepository).save(any(InventarioMovimiento.class));
@@ -127,7 +128,7 @@ class InventarioServiceTest {
     void registrarEntrada_usuarioSinPermisos_lanzaExcepcion() {
         // Given
         final InventarioMovimientoRequestDTO request = new InventarioMovimientoRequestDTO(
-                10L, 10, "Compra proveedores", 25.0);
+                10L, 10, "Compra proveedores", new BigDecimal("25.00"));
 
         // When & Then
         assertThrows(AccesoDenegadoException.class, () -> 
@@ -159,7 +160,7 @@ class InventarioServiceTest {
         assertEquals(TipoMovimiento.SALIDA, resultado.getTipo());
         assertEquals(3, resultado.getCantidad());
         // Si no se pasa costo unitario en salida, usa el del producto
-        assertEquals(20.0, resultado.getCostoUnitario());
+        assertEquals(new BigDecimal("20.00"), resultado.getCostoUnitario());
 
         // Stock bajó: 5 - 3 = 2
         assertEquals(2, productoMock.getStockActual());

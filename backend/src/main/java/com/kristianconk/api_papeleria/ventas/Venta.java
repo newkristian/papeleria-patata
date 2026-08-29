@@ -9,6 +9,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,14 +44,17 @@ public class Venta {
     @Column(nullable = false)
     private LocalDateTime fechaVenta;
 
-    @Column(nullable = false)
-    private Double subtotal = 0.0;
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal subtotal = BigDecimal.ZERO;
 
-    private Double descuento = 0.0;
-    private Double impuesto = 0.0;
+    @Column(precision = 19, scale = 2)
+    private BigDecimal descuento = BigDecimal.ZERO;
 
-    @Column(nullable = false)
-    private Double total = 0.0;
+    @Column(precision = 19, scale = 2)
+    private BigDecimal impuesto = BigDecimal.ZERO;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal total = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     private MetodoPago metodoPago;
@@ -64,7 +68,5 @@ public class Venta {
     @CreationTimestamp
     private LocalDateTime fechaCreacion;
 }
-
-
 
 

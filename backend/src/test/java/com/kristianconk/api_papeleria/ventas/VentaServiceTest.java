@@ -5,6 +5,7 @@ import com.kristianconk.api_papeleria.cliente.ClienteRepository;
 import com.kristianconk.api_papeleria.cliente.PromocionClienteRepository;
 import com.kristianconk.api_papeleria.enums.MetodoPago;
 import com.kristianconk.api_papeleria.enums.RolUsuario;
+import com.kristianconk.api_papeleria.enums.TipoDescuento;
 import com.kristianconk.api_papeleria.producto.Producto;
 import com.kristianconk.api_papeleria.producto.ProductoRepository;
 import com.kristianconk.api_papeleria.tienda.Tienda;
@@ -18,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,7 +70,7 @@ class VentaServiceTest {
         producto.setNombre("Cuaderno profesional");
         producto.setActivo(true);
         producto.setStockActual(20);
-        producto.setPrecioVenta(30.0);
+        producto.setPrecioVenta(new BigDecimal("30.00"));
 
         clienteAnonimo = new Cliente();
         clienteAnonimo.setId(1L);
@@ -89,22 +91,28 @@ class VentaServiceTest {
 
         final Venta resultado = ventaService.crearVenta(request, vendedor);
 
-        assertEquals(60.0, resultado.getSubtotal());
-        assertEquals(0.0, resultado.getDescuento());
-        assertEquals(60.0, resultado.getTotal());
+        assertEquals(new BigDecimal("60.00"), resultado.getSubtotal());
+        assertEquals(new BigDecimal("0.00"), resultado.getDescuento());
+        assertEquals(new BigDecimal("60.00"), resultado.getTotal());
         assertEquals(18, producto.getStockActual());
         assertEquals(1, resultado.getDetalles().size());
-        assertEquals(30.0, resultado.getDetalles().getFirst().getPrecioUnitario());
-        assertEquals(60.0, resultado.getDetalles().getFirst().getSubtotal());
+        assertEquals(new BigDecimal("30.00"), resultado.getDetalles().getFirst().getPrecioListaUnitario());
+        assertEquals(new BigDecimal("30.00"), resultado.getDetalles().getFirst().getPrecioUnitarioFinal());
+        assertEquals(TipoDescuento.NINGUNO, resultado.getDetalles().getFirst().getTipoDescuento());
+        assertEquals(BigDecimal.ZERO, resultado.getDetalles().getFirst().getPorcentajeDescuento());
+        assertEquals(BigDecimal.ZERO, resultado.getDetalles().getFirst().getMontoDescuento());
+        assertEquals(new BigDecimal("60.00"), resultado.getDetalles().getFirst().getSubtotal());
 
         final ArgumentCaptor<Venta> ventaCaptor = ArgumentCaptor.forClass(Venta.class);
         verify(ventaRepository).save(ventaCaptor.capture());
-        assertEquals(30.0, ventaCaptor.getValue().getDetalles().getFirst().getPrecioUnitario());
+        assertEquals(
+                new BigDecimal("30.00"),
+                ventaCaptor.getValue().getDetalles().getFirst().getPrecioListaUnitario());
     }
 
     @Test
     void crearVenta_precioCatalogoInvalidoNoModificaInventarioNiPersisteVenta() {
-        producto.setPrecioVenta(0.0);
+        producto.setPrecioVenta(BigDecimal.ZERO);
         final VentaRequestDTO request = new VentaRequestDTO(
                 null,
                 MetodoPago.EFECTIVO,

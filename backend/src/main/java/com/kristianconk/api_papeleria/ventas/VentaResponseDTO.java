@@ -6,6 +6,7 @@ import com.kristianconk.api_papeleria.enums.MetodoPago;
 import com.kristianconk.api_papeleria.tienda.TiendaResponseDTO;
 import com.kristianconk.api_papeleria.usuario.UsuarioResponseDTO;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,9 +18,9 @@ public record VentaResponseDTO(
         ClienteResponseDTO cliente,
         boolean ventaAnonima,
         LocalDateTime fechaVenta,
-        Double subtotal,
-        Double descuento,
-        Double total,
+        BigDecimal subtotal,
+        BigDecimal descuento,
+        BigDecimal total,
         MetodoPago metodoPago,
         EstadoVenta estado,
         List<DetalleVentaResponseDTO> detalles

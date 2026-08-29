@@ -22,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,11 +36,11 @@ public class ProductoService {
     private final InventarioMovimientoRepository inventarioMovimientoRepository;
 
     // Constantes para cálculo de porcentajes
-    private static final double PORCENTAJE_BAJO = 50.0;
-    private static final double PORCENTAJE_MEDIO = 40.0;
-    private static final double PORCENTAJE_ALTO = 30.0;
-    private static final double COSTO_BAJO = 50.0;
-    private static final double COSTO_MEDIO = 200.0;
+    private static final BigDecimal PORCENTAJE_BAJO = new BigDecimal("50.00");
+    private static final BigDecimal PORCENTAJE_MEDIO = new BigDecimal("40.00");
+    private static final BigDecimal PORCENTAJE_ALTO = new BigDecimal("30.00");
+    private static final BigDecimal COSTO_BAJO = new BigDecimal("50.00");
+    private static final BigDecimal COSTO_MEDIO = new BigDecimal("200.00");
 
     @Transactional
     public ProductoDetalleDTO crearProducto(ProductoRequestDTO request, Usuario usuario) {
@@ -259,10 +260,10 @@ public class ProductoService {
                 .map(this::mapToListadoDTO);
     }
 
-    private double calcularPorcentajeGanancia(Double costoCompra) {
-        if (costoCompra < COSTO_BAJO) {
+    private BigDecimal calcularPorcentajeGanancia(final BigDecimal costoCompra) {
+        if (costoCompra.compareTo(COSTO_BAJO) < 0) {
             return PORCENTAJE_BAJO;
-        } else if (costoCompra < COSTO_MEDIO) {
+        } else if (costoCompra.compareTo(COSTO_MEDIO) < 0) {
             return PORCENTAJE_MEDIO;
         } else {
             return PORCENTAJE_ALTO;

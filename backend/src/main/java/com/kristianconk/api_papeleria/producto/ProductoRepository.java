@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -46,8 +47,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT p FROM Producto p WHERE " +
             "p.precioVenta BETWEEN :precioMin AND :precioMax")
     Page<Producto> findByRangoPrecio(
-            @Param("precioMin") Double precioMin,
-            @Param("precioMax") Double precioMax,
+            @Param("precioMin") BigDecimal precioMin,
+            @Param("precioMax") BigDecimal precioMax,
             Pageable pageable);
 
     // Productos con stock bajo

@@ -4,6 +4,7 @@ import com.kristianconk.api_papeleria.categoria.CategoriaDTO;
 import com.kristianconk.api_papeleria.producto.foto.ProductoFotoDTO;
 import com.kristianconk.api_papeleria.proveedor.ProveedorDTO;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,9 +16,9 @@ public record ProductoDetalleDTO(
         String descripcion,
         CategoriaDTO categoria,
         ProveedorDTO proveedor,
-        Double costoCompra,
-        Double porcentajeGanancia,
-        Double precioVenta,
+        BigDecimal costoCompra,
+        BigDecimal porcentajeGanancia,
+        BigDecimal precioVenta,
         Integer stockMinimo,
         Integer stockActual,
         String unidadMedida,

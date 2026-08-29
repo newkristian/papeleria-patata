@@ -13,6 +13,7 @@ Registrar entradas y salidas manuales y consultar la bitácora histórica con fi
 - Las salidas validan existencias y las operaciones son transaccionales.
 - El costo se oculta a vendedores y una entrada solo incrementa el costo de catálogo
   cuando el nuevo costo es mayor.
+- Los costos unitarios utilizan `BigDecimal` y `NUMERIC(19, 2)`.
 
 ## Pendientes no esenciales
 

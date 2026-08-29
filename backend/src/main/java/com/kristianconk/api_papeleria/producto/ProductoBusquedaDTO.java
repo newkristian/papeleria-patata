@@ -1,13 +1,15 @@
 package com.kristianconk.api_papeleria.producto;
 
+import java.math.BigDecimal;
+
 // DTO para búsqueda avanzada
 public record ProductoBusquedaDTO(
         String termino,
         Long categoriaId,
         Long proveedorId,
         Boolean activo,
-        Double precioMin,
-        Double precioMax,
+        BigDecimal precioMin,
+        BigDecimal precioMax,
         Boolean soloStockBajo
 ) {
     public ProductoBusquedaDTO {

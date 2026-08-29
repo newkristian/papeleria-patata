@@ -1,6 +1,8 @@
 package com.kristianconk.api_papeleria.inventario;
 
 import com.kristianconk.api_papeleria.enums.TipoMovimiento;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record InventarioMovimientoResponseDTO(
@@ -13,6 +15,6 @@ public record InventarioMovimientoResponseDTO(
         TipoMovimiento tipo,
         Integer cantidad,
         String motivo,
-        Double costoUnitario,
+        BigDecimal costoUnitario,
         LocalDateTime fechaMovimiento
 ) {}

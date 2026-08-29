@@ -2,6 +2,8 @@ package com.kristianconk.api_papeleria.producto;
 
 import jakarta.validation.constraints.*;
 
+import java.math.BigDecimal;
+
 public record ProductoRequestDTO(
         @NotBlank(message = "El código de barras es obligatorio")
         @Size(max = 50, message = "El código de barras no puede exceder 50 caracteres")
@@ -22,7 +24,8 @@ public record ProductoRequestDTO(
 
         @NotNull(message = "El costo de compra es obligatorio")
         @Positive(message = "El costo de compra debe ser mayor a 0")
-        Double costoCompra,
+        @Digits(integer = 17, fraction = 2, message = "El costo de compra admite máximo 2 decimales")
+        BigDecimal costoCompra,
 
         @Min(value = 0, message = "El stock mínimo no puede ser negativo")
         Integer stockMinimo,
@@ -31,7 +34,8 @@ public record ProductoRequestDTO(
         String unidadMedida,
 
         @PositiveOrZero(message = "El porcentaje de ganancia debe ser positivo o cero")
-        Double porcentajeGananciaManual, // Opcional, si se quiere forzar un porcentaje
+        @Digits(integer = 3, fraction = 2, message = "El porcentaje de ganancia admite máximo 2 decimales")
+        BigDecimal porcentajeGananciaManual, // Opcional, si se quiere forzar un porcentaje
 
         Boolean activo,
 

@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -25,11 +26,11 @@ public class InventarioService {
     private final InventarioMovimientoRepository inventarioMovimientoRepository;
     private final ProductoRepository productoRepository;
 
-    private static final double COSTO_BAJO = 50.0;
-    private static final double COSTO_MEDIO = 200.0;
-    private static final double PORCENTAJE_BAJO = 50.0;
-    private static final double PORCENTAJE_MEDIO = 40.0;
-    private static final double PORCENTAJE_ALTO = 30.0;
+    private static final BigDecimal COSTO_BAJO = new BigDecimal("50.00");
+    private static final BigDecimal COSTO_MEDIO = new BigDecimal("200.00");
+    private static final BigDecimal PORCENTAJE_BAJO = new BigDecimal("50.00");
+    private static final BigDecimal PORCENTAJE_MEDIO = new BigDecimal("40.00");
+    private static final BigDecimal PORCENTAJE_ALTO = new BigDecimal("30.00");
 
     public InventarioMovimiento registrarEntrada(final InventarioMovimientoRequestDTO request, final Usuario usuario) {
         log.info("[POS/InventarioService] - REGISTRAR_ENTRADA: productoId: {}, cantidad: {}, userId: {}", 
@@ -52,7 +53,7 @@ public class InventarioService {
         producto.setStockActual(producto.getStockActual() + request.cantidad());
 
         // Actualizar costo de compra y porcentaje de ganancia si el nuevo costo es mayor
-        if (request.costoUnitario() > producto.getCostoCompra()) {
+        if (request.costoUnitario().compareTo(producto.getCostoCompra()) > 0) {
             log.info("[POS/InventarioService] - REGISTRAR_ENTRADA: actualizando costo de compra de {} a {}, userId: {}", 
                     producto.getCostoCompra(), request.costoUnitario(), usuario.getId());
             producto.setCostoCompra(request.costoUnitario());
@@ -138,11 +139,11 @@ public class InventarioService {
         }
     }
 
-    private double calcularPorcentajeGanancia(final Double costoCompra) {
-        if (costoCompra < COSTO_BAJO) {
+    private BigDecimal calcularPorcentajeGanancia(final BigDecimal costoCompra) {
+        if (costoCompra.compareTo(COSTO_BAJO) < 0) {
             return PORCENTAJE_BAJO;
         }
-        if (costoCompra < COSTO_MEDIO) {
+        if (costoCompra.compareTo(COSTO_MEDIO) < 0) {
             return PORCENTAJE_MEDIO;
         }
         return PORCENTAJE_ALTO;

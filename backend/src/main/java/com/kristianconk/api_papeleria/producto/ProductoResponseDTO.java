@@ -1,5 +1,7 @@
 package com.kristianconk.api_papeleria.producto;
 
+import java.math.BigDecimal;
+
 public record ProductoResponseDTO(
         Long id,
         String codigoBarras,
@@ -7,6 +9,6 @@ public record ProductoResponseDTO(
         String descripcion,
         String categoria,
         String proveedor,
-        Double precioVenta,
+        BigDecimal precioVenta,
         Integer stockActual
 ) {}

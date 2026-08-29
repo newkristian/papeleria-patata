@@ -120,8 +120,14 @@ public class VentaController {
                 detalle.getId(),
                 mapProducto(detalle.getProducto()),
                 detalle.getCantidad(),
-                detalle.getPrecioUnitario(),
-                detalle.getSubtotal());
+                detalle.getPrecioListaUnitario(),
+                detalle.getTipoDescuento(),
+                detalle.getPorcentajeDescuento(),
+                detalle.getMontoDescuento(),
+                detalle.getPrecioUnitarioFinal(),
+                detalle.getSubtotal(),
+                detalle.getAutorizadoPor() != null ? detalle.getAutorizadoPor().getId() : null,
+                detalle.getMotivoDescuento());
     }
 
     private ProductoResponseDTO mapProducto(Producto producto) {

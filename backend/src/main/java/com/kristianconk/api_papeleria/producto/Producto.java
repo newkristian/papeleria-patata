@@ -8,6 +8,8 @@ import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,14 +39,14 @@ public class Producto {
     @JoinColumn(name = "proveedor_id", nullable = false)
     private Proveedor proveedor;
 
-    @Column(nullable = false)
-    private Double costoCompra;
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal costoCompra;
 
-    @Column(nullable = false)
-    private Double porcentajeGanancia; // Calculado por el sistema
+    @Column(nullable = false, precision = 5, scale = 2)
+    private BigDecimal porcentajeGanancia; // Calculado por el sistema
 
-    @Column(nullable = false)
-    private Double precioVenta; // Calculado automáticamente
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal precioVenta; // Calculado automáticamente
 
     private Integer stockMinimo = 5;
     private Integer stockActual = 0;
@@ -69,8 +71,12 @@ public class Producto {
 
     @PrePersist
     @PreUpdate
-    private void calcularPrecioVenta() {
-        this.precioVenta = this.costoCompra * (1 + (this.porcentajeGanancia / 100));
+    void calcularPrecioVenta() {
+        if (costoCompra == null || porcentajeGanancia == null) {
+            return;
+        }
+        final BigDecimal factorGanancia = BigDecimal.ONE.add(porcentajeGanancia.movePointLeft(2));
+        this.precioVenta = costoCompra.multiply(factorGanancia).setScale(2, RoundingMode.HALF_UP);
     }
 
     // Getters y setters

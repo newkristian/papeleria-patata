@@ -12,6 +12,8 @@ existencias.
 
 - Existen creación, actualización y consulta por ID mediante DTOs.
 - El servicio calcula el porcentaje de ganancia y valida relaciones requeridas.
+- Costo, porcentaje de ganancia y precio de venta utilizan `BigDecimal`; el precio se
+  redondea a dos decimales con `HALF_UP`.
 
 ## Pendientes conocidos
 

@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 // InventarioMovimiento.java
@@ -35,13 +36,12 @@ public class InventarioMovimiento {
 
     private String motivo;
 
-    @Column(nullable = false)
-    private Double costoUnitario;
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal costoUnitario;
 
     @CreationTimestamp
     private LocalDateTime fechaMovimiento;
 
     // Getters y setters
 }
-
 

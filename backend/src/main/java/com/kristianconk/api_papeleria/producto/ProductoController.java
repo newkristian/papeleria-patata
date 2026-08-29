@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -70,10 +71,10 @@ public class ProductoController {
             @RequestParam(required = false) Boolean activo,
 
             @Parameter(description = "Precio mínimo")
-            @RequestParam(required = false) Double precioMin,
+            @RequestParam(required = false) BigDecimal precioMin,
 
             @Parameter(description = "Precio máximo")
-            @RequestParam(required = false) Double precioMax,
+            @RequestParam(required = false) BigDecimal precioMax,
 
             @Parameter(description = "Solo productos con stock bajo")
             @RequestParam(required = false) Boolean soloStockBajo,

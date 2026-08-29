@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -24,6 +26,8 @@ import java.util.List;
 @Service
 @Transactional
 public class VentaService {
+
+    private static final int ESCALA_MONETARIA = 2;
 
     private final VentaRepository ventaRepository;
     private final ClienteRepository clienteRepository;
@@ -66,7 +70,7 @@ public class VentaService {
         }
 
         final List<DetalleVenta> detalles = new ArrayList<>();
-        double subtotalAcumulado = 0.0;
+        BigDecimal subtotalAcumulado = BigDecimal.ZERO.setScale(ESCALA_MONETARIA);
 
         for (final DetalleVentaRequestDTO detalleDTO : ventaDTO.detalles()) {
             final Producto producto = productoRepository.findById(detalleDTO.productoId())
@@ -77,8 +81,8 @@ public class VentaService {
                 throw new IllegalArgumentException("El producto " + producto.getNombre() + " no está activo");
             }
 
-            final Double precioCatalogo = producto.getPrecioVenta();
-            if (precioCatalogo == null || !Double.isFinite(precioCatalogo) || precioCatalogo <= 0.0) {
+            final BigDecimal precioCatalogo = producto.getPrecioVenta();
+            if (precioCatalogo == null || precioCatalogo.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new IllegalStateException(
                         "El producto " + producto.getNombre() + " no tiene un precio de venta válido");
             }
@@ -95,25 +99,29 @@ public class VentaService {
             detalle.setVenta(venta);
             detalle.setProducto(producto);
             detalle.setCantidad(detalleDTO.cantidad());
-            detalle.setPrecioUnitario(precioCatalogo);
+            detalle.setPrecioListaUnitario(precioCatalogo);
+            detalle.setPrecioUnitarioFinal(precioCatalogo);
 
-            final double detalleSubtotal = detalleDTO.cantidad() * precioCatalogo;
+            final BigDecimal detalleSubtotal = precioCatalogo
+                    .multiply(BigDecimal.valueOf(detalleDTO.cantidad()))
+                    .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
             detalle.setSubtotal(detalleSubtotal);
-            subtotalAcumulado += detalleSubtotal;
+            subtotalAcumulado = subtotalAcumulado.add(detalleSubtotal);
 
             detalles.add(detalle);
         }
 
         venta.setDetalles(detalles);
         venta.setSubtotal(subtotalAcumulado);
-        venta.setDescuento(0.0);
+        venta.setDescuento(BigDecimal.ZERO.setScale(ESCALA_MONETARIA));
         venta.setTotal(subtotalAcumulado);
 
         final Venta ventaGuardada = ventaRepository.save(venta);
 
         if (!ventaGuardada.isVentaAnonima() && ventaGuardada.getCliente() != null) {
             final Cliente cliente = ventaGuardada.getCliente();
-            cliente.setTotalCompras(cliente.getTotalCompras() + ventaGuardada.getTotal());
+            final BigDecimal totalComprasActual = BigDecimal.valueOf(cliente.getTotalCompras());
+            cliente.setTotalCompras(totalComprasActual.add(ventaGuardada.getTotal()).doubleValue());
             clienteRepository.save(cliente);
             verificarPromocionesCliente(cliente);
         }

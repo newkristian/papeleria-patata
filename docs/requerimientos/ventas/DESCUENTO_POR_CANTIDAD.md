@@ -66,4 +66,5 @@ del servidor y la respuesta debe permitir al frontend mostrar el total definitiv
 
 ## Implementación verificada
 
-No existe implementación de descuentos por cantidad.
+La base financiera ya utiliza `BigDecimal` y el detalle de venta contiene los campos
+históricos requeridos. Todavía no existe la evaluación de descuentos por cantidad.
