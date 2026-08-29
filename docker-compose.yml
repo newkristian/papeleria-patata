@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16.2-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-posdb_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-posuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pospass}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # No se publica 5432 al host por defecto: backend y db se hablan por la
+    # red interna de compose. Si necesitas conectar un cliente SQL local,
+    # descomenta y ajusta el puerto externo si 5432 ya está en uso:
+    # ports:
+    #   - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-posuser} -d ${POSTGRES_DB:-posdb_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-posdb_dev}
+      DATABASE_USER: ${POSTGRES_USER:-posuser}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-pospass}
+      JWT_SECRET: ${JWT_SECRET:-Ptt-k@uuaii-JWT-S3cr3t-K3y-256-b1ts-M1n1mum!}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-3600000}
+    volumes:
+      - backend-uploads:/app/upload-dir
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  db-data:
+  backend-uploads:
