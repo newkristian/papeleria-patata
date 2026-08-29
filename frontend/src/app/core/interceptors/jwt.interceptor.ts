@@ -4,12 +4,12 @@ import { AuthService } from '../services/auth.service';
 
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
-  const token = authService.getToken();
+  const accessToken = authService.getAccessToken();
 
-  if (token) {
+  if (accessToken) {
     req = req.clone({
       setHeaders: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${accessToken}`
       }
     });
   }
