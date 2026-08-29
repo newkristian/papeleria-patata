@@ -16,6 +16,9 @@ cumplan las reglas definidas.
 
 ## Pendientes conocidos
 
-- Verificar si la promoción debe aplicarse automáticamente al registrar ventas.
+- Integrar la promoción VIP como candidata del motor descrito en
+  `PROMOCIONES_PRODUCTO.md`.
+- Comparar su beneficio con otras promociones y aplicar solamente la opción más
+  favorable; no debe acumularse.
 - Definir efecto de cancelaciones y devoluciones sobre nivel y promociones.
 - Añadir pruebas de umbral, vigencia, duplicados y concurrencia.
