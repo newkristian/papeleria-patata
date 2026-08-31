@@ -24,6 +24,19 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
+    @ExceptionHandler(org.springframework.security.authorization.AuthorizationDeniedException.class)
+    public ResponseEntity<ErrorResponse> manejarAutorizacionDenegada(
+            final org.springframework.security.authorization.AuthorizationDeniedException e) {
+        log.error("[POS/GlobalExceptionHandler] - MANEJAR_AUTORIZACION_DENEGADA: errorMessage: {}", e.getMessage());
+        final ErrorResponse error = new ErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                "Acceso denegado",
+                "No tiene permisos suficientes para realizar esta operación",
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> manejarResourceNotFound(final ResourceNotFoundException e) {
         log.error("[POS/GlobalExceptionHandler] - MANEJAR_RESOURCE_NOT_FOUND: errorMessage: {}", e.getMessage());
@@ -49,6 +62,31 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> manejarJsonInvalido(
+            final org.springframework.http.converter.HttpMessageNotReadableException e) {
+        final Throwable causaRaiz = causaMasProfunda(e);
+        final String mensaje = causaRaiz instanceof IllegalArgumentException
+                ? causaRaiz.getMessage()
+                : "El cuerpo de la solicitud no tiene un formato válido";
+        log.error("[POS/GlobalExceptionHandler] - MANEJAR_JSON_INVALIDO: errorMessage: {}", mensaje);
+        final ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Error de validación",
+                mensaje,
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    private Throwable causaMasProfunda(final Throwable e) {
+        Throwable actual = e;
+        while (actual.getCause() != null && actual.getCause() != actual) {
+            actual = actual.getCause();
+        }
+        return actual;
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
