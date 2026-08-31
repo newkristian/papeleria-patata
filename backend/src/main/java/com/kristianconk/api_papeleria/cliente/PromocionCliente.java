@@ -39,5 +39,8 @@ public class PromocionCliente {
 
     private boolean activa = true;
 
+    @Column(nullable = false)
+    private Integer prioridad = 0;
+
     // Getters y setters
 }
