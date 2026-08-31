@@ -10,6 +10,12 @@ Aplicar:
 
 `requirements_analysis.md`
 
+Antes de realizar modificaciones deberá establecerse el estado inicial del
+proyecto mediante las verificaciones definidas en dicho workflow.
+
+Este estado servirá como referencia para determinar posteriormente si un error
+ya existía o fue introducido por la implementación.
+
 No modificar código durante esta fase.
 
 ---

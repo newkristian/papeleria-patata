@@ -9,6 +9,24 @@ Está prohibido comenzar directamente la implementación.
 
 ---
 
+# Verificación del estado inicial
+
+Antes de proponer o implementar cualquier cambio, el agente deberá verificar,
+cuando el entorno disponible lo permita, que el proyecto se encuentra en un
+estado funcional conocido.
+
+Como mínimo deberá:
+
+- verificar que el backend compile correctamente;
+- verificar que el frontend compile correctamente, cuando exista;
+- ejecutar las pruebas automatizadas existentes;
+- verificar que no existan errores previos relacionados con el requerimiento.
+
+Cuando sea razonable y el entorno lo permita, también deberá comprobar que los
+componentes necesarios puedan ejecutarse correctamente.
+
+---
+
 # Objetivos del análisis
 
 El agente deberá determinar:
@@ -53,6 +71,36 @@ Durante el análisis, el agente deberá identificar:
 - vulnerabilidades;
 - inconsistencias con el dominio;
 - incompatibilidades con arquitectura existente.
+
+## Fallos previos
+
+Si antes de realizar cambios se detectan:
+
+- errores de compilación;
+- pruebas fallidas;
+- errores de ejecución;
+- problemas de configuración;
+- migraciones fallidas;
+
+el agente deberá detenerse e informar al propietario.
+
+No deberá asumir que estos problemas fueron provocados por la tarea actual.
+
+El agente deberá distinguir claramente entre:
+
+1. problemas existentes antes de la modificación;
+2. problemas introducidos durante la implementación.
+
+El propietario decidirá si los problemas existentes deben resolverse antes de
+continuar con el nuevo requerimiento.
+
+## Imposibilidad de verificación
+
+Si el agente no puede ejecutar alguna verificación por limitaciones del entorno,
+dependencias externas, credenciales u otra causa, deberá indicarlo explícitamente.
+
+Nunca deberá afirmar que el proyecto compila, las pruebas pasan o la aplicación
+se ejecuta si no realizó realmente dicha verificación.
 
 ---
 
