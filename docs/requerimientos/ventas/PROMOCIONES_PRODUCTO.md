@@ -1,7 +1,7 @@
 # Promociones de producto
 
-**Estado:** Aprobado
-**Última revisión:** 28 de agosto de 2026
+**Estado:** Implementado
+**Última revisión:** 1 de septiembre de 2026
 
 ## Objetivo
 
@@ -100,6 +100,21 @@ Modificar o desactivar una promoción no debe alterar ventas históricas.
 
 ## Implementación verificada
 
-No existe todavía un motor general de promociones de producto. La promoción VIP
-actual está acoplada al flujo de creación de ventas y deberá integrarse como candidata
-sin acumularse con otras promociones.
+- Modelo persistente (`Promocion`, `ReglaDescuentoPorCantidad`) y administración REST
+  restringida a `ADMINISTRADOR` (`PromocionController`).
+- `MotorPromocionesService` evalúa candidatas de producto/categoría y de cliente
+  (incluida VIP) para una cantidad ya consolidada y elige una sola ganadora: mayor
+  beneficio, luego prioridad explícita, luego vigencia con fecha de inicio y fin
+  definidas sobre vigencia atemporal, y finalmente la promoción más reciente (mayor
+  ID) como desempate final.
+- `VentaService.crearVenta` consolida productos repetidos por `productoId` antes de
+  evaluar, invoca el motor por cada línea y aplica como máximo una promoción por
+  producto; el frontend nunca decide precio, promoción, porcentaje ni total.
+- Cada `DetalleVenta` conserva precio de lista, tipo y monto de descuento, porcentaje,
+  precio final, subtotal y la referencia a la promoción ganadora (de producto o de
+  cliente, mutuamente excluyentes). Modificar o desactivar una promoción no altera
+  ventas históricas (verificado manualmente).
+- Un fallo en cualquier línea revierte la venta completa antes de persistir.
+
+Pendiente: autorización manual de descuento (Tarea 6) reemplazará la promoción
+automática de una línea cuando se implemente.

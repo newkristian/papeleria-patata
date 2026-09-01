@@ -1,7 +1,7 @@
 # Promociones por nivel de cliente
 
 **Estado:** En desarrollo  
-**Última revisión:** 28 de agosto de 2026
+**Última revisión:** 1 de septiembre de 2026
 
 ## Objetivo
 
@@ -17,12 +17,16 @@ cumplan las reglas definidas.
   persisten con precisión decimal exacta mediante `BigDecimal` y `NUMERIC`.
 - Existe una prueba de venta que cruza el umbral VIP y verifica tanto el acumulado
   exacto como el porcentaje de la promoción creada.
+- `PromocionCliente` tiene columna `prioridad` y vigencia obligatoria
+  (`fechaInicio`/`fechaFin`, ambas inclusivas). Participa en `MotorPromocionesService`
+  como una candidata más, comparada por beneficio, prioridad, vigencia definida e ID,
+  sin acumularse con otras promociones.
+- `montoDescuentoFijo` (descuento de monto fijo) se evalúa como candidata completa en
+  el mismo grupo, capado al subtotal de la línea, con porcentaje efectivo calculado
+  para fines de auditoría.
+- Una venta anónima nunca evalúa promociones de cliente.
 
 ## Pendientes conocidos
 
-- Integrar la promoción VIP como candidata del motor descrito en
-  `PROMOCIONES_PRODUCTO.md`.
-- Comparar su beneficio con otras promociones y aplicar solamente la opción más
-  favorable; no debe acumularse.
 - Definir efecto de cancelaciones y devoluciones sobre nivel y promociones.
-- Añadir pruebas de umbral, vigencia, duplicados y concurrencia.
+- Añadir pruebas de concurrencia sobre la creación de la promoción VIP.

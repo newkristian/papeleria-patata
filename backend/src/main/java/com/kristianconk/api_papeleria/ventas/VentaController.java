@@ -124,6 +124,8 @@ public class VentaController {
                 detalle.getTipoDescuento(),
                 detalle.getPorcentajeDescuento(),
                 detalle.getMontoDescuento(),
+                detalle.getPromocionProducto() != null ? detalle.getPromocionProducto().getId() : null,
+                detalle.getPromocionCliente() != null ? detalle.getPromocionCliente().getId() : null,
                 detalle.getPrecioUnitarioFinal(),
                 detalle.getSubtotal(),
                 detalle.getAutorizadoPor() != null ? detalle.getAutorizadoPor().getId() : null,

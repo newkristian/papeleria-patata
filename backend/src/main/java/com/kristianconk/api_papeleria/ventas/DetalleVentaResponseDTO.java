@@ -13,6 +13,8 @@ public record DetalleVentaResponseDTO(
         TipoDescuento tipoDescuento,
         BigDecimal porcentajeDescuento,
         BigDecimal montoDescuento,
+        Long promocionProductoId,
+        Long promocionClienteId,
         BigDecimal precioUnitarioFinal,
         BigDecimal subtotal,
         Long autorizadoPorUsuarioId,

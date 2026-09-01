@@ -1,7 +1,9 @@
 package com.kristianconk.api_papeleria.ventas;
 
+import com.kristianconk.api_papeleria.cliente.PromocionCliente;
 import com.kristianconk.api_papeleria.enums.TipoDescuento;
 import com.kristianconk.api_papeleria.producto.Producto;
+import com.kristianconk.api_papeleria.promocion.Promocion;
 import com.kristianconk.api_papeleria.usuario.Usuario;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -40,6 +42,17 @@ public class DetalleVenta {
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal montoDescuento = BigDecimal.ZERO;
+
+    // Fotografía de qué promoción ganó la línea. Excluyentes entre sí y coherentes con
+    // tipoDescuento (ver chk_detalle_promocion_tipo en V9): solo una puede tener valor,
+    // o ninguna si tipoDescuento es NINGUNO/MANUAL.
+    @ManyToOne
+    @JoinColumn(name = "promocion_producto_id")
+    private Promocion promocionProducto;
+
+    @ManyToOne
+    @JoinColumn(name = "promocion_cliente_id")
+    private PromocionCliente promocionCliente;
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal precioUnitarioFinal;
