@@ -1,7 +1,7 @@
 # Precisión monetaria
 
 **Estado:** Implementado
-**Última revisión:** 28 de agosto de 2026
+**Última revisión:** 2 de septiembre de 2026
 
 ## Objetivo
 
@@ -36,6 +36,13 @@ reglas de redondeo explícitas.
   pruebas.
 - `VentaService` acumula compras y evalúa el umbral VIP directamente con
   `BigDecimal`, sin conversiones intermedias.
+- Promociones (`promociones`, `reglas_descuento_cantidad`) y autorizaciones de
+  descuento manual (`autorizaciones_descuento`, incluidos los campos de auditoría de
+  T8: costo considerado y monto de promoción automática disponible) usan
+  `NUMERIC(19,2)`/`NUMERIC(5,2)` y `BigDecimal` de punta a punta.
+- Verificado con una prueba de integración real (T8) que compara el resultado del
+  backend contra un cálculo `BigDecimal`/`HALF_UP` independiente en un caso con
+  decimales no triviales (33.33% de $672.00), no solo con valores redondos.
 
 ## Criterios de aceptación
 

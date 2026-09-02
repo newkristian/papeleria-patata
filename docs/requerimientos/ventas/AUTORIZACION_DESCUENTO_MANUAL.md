@@ -87,6 +87,27 @@ Debe conservarse:
 
 Nunca deben registrarse contraseña, tokens completos ni datos secretos.
 
+### Implementación verificada (T8)
+
+`autorizaciones_descuento` (migración `V12`) guarda explícitamente cada campo listado
+arriba, incluidos los tres que antes se calculaban pero no se conservaban:
+
+- `rol_autorizador`: el rol que tenía el autorizador **en el momento de emitir la
+  autorización**, guardado aparte de `Usuario.rol` a propósito — si el rol de ese
+  usuario cambia después, la auditoría histórica de esta autorización no cambia con
+  él.
+- `costo_considerado`: el costo de compra del producto usado para el piso de
+  `GERENTE` en ese momento.
+- `monto_promocion_automatica_disponible`: cuánto beneficio ofrecía la mejor
+  promoción automática disponible en ese momento, para poder justificar después por
+  qué se prefirió el descuento manual.
+
+`venta`, `detalle`, `vendedor`, `porcentaje`/`monto` aplicados, `motivo`, `fecha` y
+`tienda` ya se conservaban desde T5/T6 a través de `DetalleVenta` y
+`AutorizacionDescuento`. Verificado con pruebas unitarias (`AutorizacionDescuentoServiceTest`)
+y una prueba de integración real contra PostgreSQL (T8,
+`VentaFlujoIntegrationTest`).
+
 ## Criterios de aceptación
 
 - Un `VENDEDOR` no puede elegir descuentos manuales sin autorización válida.

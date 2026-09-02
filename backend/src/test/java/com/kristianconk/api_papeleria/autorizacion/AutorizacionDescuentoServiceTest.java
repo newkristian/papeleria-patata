@@ -202,8 +202,38 @@ class AutorizacionDescuentoServiceTest {
         assertEquals(gerente, captor.getValue().getAutorizador());
         assertEquals(vendedor, captor.getValue().getVendedor());
         assertEquals("carrito-1", captor.getValue().getCarritoId());
+        // T8: fotografía de auditoría — rol del autorizador y costo considerado en
+        // este momento, independientes de lo que Usuario/Producto digan después.
+        assertEquals(RolUsuario.GERENTE, captor.getValue().getRolAutorizador());
+        assertEquals(new BigDecimal("80.00"), captor.getValue().getCostoConsiderado());
+        assertEquals(BigDecimal.ZERO.setScale(2), captor.getValue().getMontoPromocionAutomaticaDisponible());
 
         verify(limitadorIntentosAutorizacion).registrarExito(vendedor.getId());
+    }
+
+    @Test
+    void solicitar_conPromocionAutomaticaDisponible_laConservaParaAuditoriaYComparacion() {
+        when(usuarioRepository.findByUsername("gerente@pos.com")).thenReturn(Optional.of(gerente));
+        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(tokenOpacoGenerador.generar()).thenReturn("token-plano");
+        when(tokenOpacoGenerador.hash("token-plano")).thenReturn("hash-token");
+        final ResultadoPromocion conPromocion = new ResultadoPromocion(
+                TipoDescuento.CANTIDAD, 5L, new BigDecimal("5.00"), new BigDecimal("200.00"),
+                new BigDecimal("15.00"), new BigDecimal("185.00"));
+        when(motorPromocionesService.evaluar(any(), org.mockito.ArgumentMatchers.eq(2), any(), any()))
+                .thenReturn(conPromocion);
+
+        final AutorizacionDescuentoResponseDTO respuesta = autorizacionDescuentoService.solicitar(
+                solicitud("gerente@pos.com", new BigDecimal("10.00")), vendedor);
+
+        assertTrue(respuesta.promocionAutomaticaDisponible());
+        assertEquals(new BigDecimal("15.00"), respuesta.montoPromocionAutomatica());
+        // 20.00 (manual) - 15.00 (automática) = 5.00 de diferencia a favor del manual.
+        assertEquals(new BigDecimal("5.00"), respuesta.diferenciaVsPromocionAutomatica());
+
+        final ArgumentCaptor<AutorizacionDescuento> captor = ArgumentCaptor.forClass(AutorizacionDescuento.class);
+        verify(autorizacionDescuentoRepository).save(captor.capture());
+        assertEquals(new BigDecimal("15.00"), captor.getValue().getMontoPromocionAutomaticaDisponible());
     }
 
     private ResultadoPromocion sinPromocion() {

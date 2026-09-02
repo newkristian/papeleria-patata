@@ -1,7 +1,7 @@
 # Descuento de producto por cantidad
 
-**Estado:** Aprobado
-**Última revisión:** 28 de agosto de 2026
+**Estado:** Implementado
+**Última revisión:** 2 de septiembre de 2026
 
 ## Objetivo
 
@@ -66,5 +66,17 @@ del servidor y la respuesta debe permitir al frontend mostrar el total definitiv
 
 ## Implementación verificada
 
-La base financiera ya utiliza `BigDecimal` y el detalle de venta contiene los campos
-históricos requeridos. Todavía no existe la evaluación de descuentos por cantidad.
+- `MotorPromocionesService` (T4) evalúa la regla `DESCUENTO_POR_CANTIDAD` con
+  `BigDecimal` y `RoundingMode.HALF_UP`, permite varios escalones por producto y
+  selecciona el de mayor beneficio (ver `PROMOCIONES_PRODUCTO.md`).
+- `VentaService` (T5) consolida por `productoId` antes de evaluar, para que repetir un
+  producto en varias líneas no evada ni duplique el descuento.
+- El request de venta solo acepta `productoId` y `cantidad` por línea; precio,
+  porcentaje, monto y subtotal se calculan enteramente en el backend.
+- El resultado queda como fotografía histórica en `DetalleVenta`, verificado con
+  pruebas unitarias y con una prueba de integración real (T8,
+  `VentaFlujoIntegrationTest`) que confirma que desactivar la promoción después no
+  altera una venta ya confirmada, y que el redondeo HALF_UP es exacto en un caso con
+  decimales no triviales.
+- Verificado que enviar campos fabricados en el JSON (precio, porcentaje, subtotal)
+  no tiene efecto: no existen en el DTO de request y el backend los ignora.

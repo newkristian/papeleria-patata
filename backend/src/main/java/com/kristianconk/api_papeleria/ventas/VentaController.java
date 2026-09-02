@@ -42,15 +42,16 @@ public class VentaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<VentaResponseDTO>> getAllVentas() {
-        return ResponseEntity.ok(ventaService.getAllVentas().stream()
+    public ResponseEntity<List<VentaResponseDTO>> getAllVentas(@AuthenticationPrincipal Usuario usuario) {
+        return ResponseEntity.ok(ventaService.getAllVentas(usuario).stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<VentaResponseDTO> getVentaById(@PathVariable Long id) {
-        return ResponseEntity.ok(mapToResponseDTO(ventaService.getVentaById(id)));
+    public ResponseEntity<VentaResponseDTO> getVentaById(
+            @PathVariable Long id, @AuthenticationPrincipal Usuario usuario) {
+        return ResponseEntity.ok(mapToResponseDTO(ventaService.getVentaById(id, usuario)));
     }
 
     @GetMapping("/dia")
@@ -64,8 +65,9 @@ public class VentaController {
     }
 
     @GetMapping("/cliente/{clienteId}")
-    public ResponseEntity<List<VentaResponseDTO>> getVentasPorCliente(@PathVariable Long clienteId) {
-        return ResponseEntity.ok(ventaService.getVentasPorCliente(clienteId).stream()
+    public ResponseEntity<List<VentaResponseDTO>> getVentasPorCliente(
+            @PathVariable Long clienteId, @AuthenticationPrincipal Usuario usuario) {
+        return ResponseEntity.ok(ventaService.getVentasPorCliente(clienteId, usuario).stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList()));
     }

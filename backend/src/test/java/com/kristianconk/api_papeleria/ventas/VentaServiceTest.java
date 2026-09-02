@@ -413,4 +413,87 @@ class VentaServiceTest {
         verify(motorPromocionesService, never()).evaluar(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any());
         verify(ventaRepository, never()).save(any(Venta.class));
     }
+
+    // --- Control de acceso horizontal por tienda (T8) ---
+
+    private Venta ventaDeTienda(final Long tiendaId) {
+        final Tienda tienda = new Tienda();
+        tienda.setId(tiendaId);
+        final Venta venta = new Venta();
+        venta.setId(100L);
+        venta.setTienda(tienda);
+        return venta;
+    }
+
+    @Test
+    void getAllVentas_administrador_veTodasLasTiendas() {
+        final Usuario admin = new Usuario();
+        admin.setRol(RolUsuario.ADMINISTRADOR);
+        when(ventaRepository.findAll()).thenReturn(List.of(ventaDeTienda(1L), ventaDeTienda(2L)));
+
+        final List<Venta> resultado = ventaService.getAllVentas(admin);
+
+        assertEquals(2, resultado.size());
+        verify(ventaRepository, never()).findByTiendaId(any());
+    }
+
+    @Test
+    void getAllVentas_vendedor_soloVeSuPropiaTienda() {
+        when(ventaRepository.findByTiendaId(1L)).thenReturn(List.of(ventaDeTienda(1L)));
+
+        final List<Venta> resultado = ventaService.getAllVentas(vendedor);
+
+        assertEquals(1, resultado.size());
+        verify(ventaRepository).findByTiendaId(1L);
+        verify(ventaRepository, never()).findAll();
+    }
+
+    @Test
+    void getVentaById_administrador_puedeVerVentaDeCualquierTienda() {
+        final Usuario admin = new Usuario();
+        admin.setRol(RolUsuario.ADMINISTRADOR);
+        when(ventaRepository.findById(100L)).thenReturn(Optional.of(ventaDeTienda(99L)));
+
+        final Venta resultado = ventaService.getVentaById(100L, admin);
+
+        assertEquals(99L, resultado.getTienda().getId());
+    }
+
+    @Test
+    void getVentaById_vendedorDeOtraTienda_recibe404ComoSiNoExistiera() {
+        when(ventaRepository.findById(100L)).thenReturn(Optional.of(ventaDeTienda(99L)));
+
+        assertThrows(com.kristianconk.api_papeleria.error.ResourceNotFoundException.class,
+                () -> ventaService.getVentaById(100L, vendedor));
+    }
+
+    @Test
+    void getVentaById_vendedorDeLaMismaTienda_laPuedeVer() {
+        when(ventaRepository.findById(100L)).thenReturn(Optional.of(ventaDeTienda(1L)));
+
+        final Venta resultado = ventaService.getVentaById(100L, vendedor);
+
+        assertEquals(1L, resultado.getTienda().getId());
+    }
+
+    @Test
+    void getVentasPorCliente_vendedor_filtraSoloLasDeSuTienda() {
+        when(ventaRepository.findByClienteId(5L)).thenReturn(List.of(ventaDeTienda(1L), ventaDeTienda(2L)));
+
+        final List<Venta> resultado = ventaService.getVentasPorCliente(5L, vendedor);
+
+        assertEquals(1, resultado.size());
+        assertEquals(1L, resultado.getFirst().getTienda().getId());
+    }
+
+    @Test
+    void getVentasPorCliente_administrador_veTodasLasTiendas() {
+        final Usuario admin = new Usuario();
+        admin.setRol(RolUsuario.ADMINISTRADOR);
+        when(ventaRepository.findByClienteId(5L)).thenReturn(List.of(ventaDeTienda(1L), ventaDeTienda(2L)));
+
+        final List<Venta> resultado = ventaService.getVentasPorCliente(5L, admin);
+
+        assertEquals(2, resultado.size());
+    }
 }

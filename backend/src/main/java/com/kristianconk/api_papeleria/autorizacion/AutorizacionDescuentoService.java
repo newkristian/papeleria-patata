@@ -94,9 +94,17 @@ public class AutorizacionDescuentoService {
         final String tokenPlano = tokenOpacoGenerador.generar();
         final LocalDateTime ahora = LocalDateTime.now();
 
+        // Comparación informativa/de auditoría contra la mejor promoción automática de
+        // producto/categoría disponible en este momento. No considera promociones de
+        // cliente porque aún no hay una venta confirmada con cliente asociado; es una
+        // limitación conocida y documentada, no un cálculo aplicado.
+        final ResultadoPromocion automatica = motorPromocionesService.evaluar(
+                producto, request.cantidad(), null, ahora);
+
         final AutorizacionDescuento autorizacion = new AutorizacionDescuento();
         autorizacion.setTokenHash(tokenOpacoGenerador.hash(tokenPlano));
         autorizacion.setAutorizador(autorizador);
+        autorizacion.setRolAutorizador(autorizador.getRol());
         autorizacion.setVendedor(vendedor);
         autorizacion.setTienda(vendedor.getTienda());
         autorizacion.setProducto(producto);
@@ -104,6 +112,8 @@ public class AutorizacionDescuentoService {
         autorizacion.setPorcentaje(request.porcentaje());
         autorizacion.setMotivo(request.motivo());
         autorizacion.setCarritoId(request.carritoId());
+        autorizacion.setCostoConsiderado(producto.getCostoCompra());
+        autorizacion.setMontoPromocionAutomaticaDisponible(automatica.montoDescuento());
         autorizacion.setFechaEmision(ahora);
         autorizacion.setFechaExpiracion(ahora.plusMinutes(VIGENCIA_MINUTOS));
         autorizacionDescuentoRepository.save(autorizacion);
@@ -113,7 +123,7 @@ public class AutorizacionDescuentoService {
                 autorizacion.getId(), autorizador.getId(), autorizador.getRol(), vendedor.getId(),
                 producto.getId(), request.cantidad(), request.porcentaje());
 
-        return construirRespuesta(tokenPlano, autorizacion, producto, precioFinal, ahora);
+        return construirRespuesta(tokenPlano, autorizacion, producto, precioFinal, automatica);
     }
 
     /**
@@ -197,20 +207,13 @@ public class AutorizacionDescuentoService {
 
     private AutorizacionDescuentoResponseDTO construirRespuesta(
             final String tokenPlano, final AutorizacionDescuento autorizacion, final Producto producto,
-            final BigDecimal precioFinal, final LocalDateTime ahora) {
+            final BigDecimal precioFinal, final ResultadoPromocion automatica) {
         final BigDecimal subtotalLista = producto.getPrecioVenta()
                 .multiply(BigDecimal.valueOf(autorizacion.getCantidad()))
                 .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
         final BigDecimal montoManual = subtotalLista
                 .subtract(precioFinal.multiply(BigDecimal.valueOf(autorizacion.getCantidad())))
                 .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
-
-        // Comparación informativa contra la mejor promoción automática de
-        // producto/categoría disponible. No considera promociones de cliente porque
-        // en este punto del flujo aún no hay una venta confirmada con cliente
-        // asociado; es una limitación conocida y documentada, no un cálculo aplicado.
-        final ResultadoPromocion automatica = motorPromocionesService.evaluar(
-                producto, autorizacion.getCantidad(), null, ahora);
 
         return new AutorizacionDescuentoResponseDTO(
                 tokenPlano,

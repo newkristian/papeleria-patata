@@ -1,5 +1,6 @@
 package com.kristianconk.api_papeleria.autorizacion;
 
+import com.kristianconk.api_papeleria.enums.RolUsuario;
 import com.kristianconk.api_papeleria.producto.Producto;
 import com.kristianconk.api_papeleria.tienda.Tienda;
 import com.kristianconk.api_papeleria.usuario.Usuario;
@@ -27,6 +28,14 @@ public class AutorizacionDescuento {
     @JoinColumn(name = "autorizador_usuario_id", nullable = false)
     private Usuario autorizador;
 
+    // Rol del autorizador en el momento de la emisión (T8). Se conserva por separado
+    // de Usuario.rol a propósito: si el rol de ese usuario cambia después, la
+    // auditoría histórica de esta autorización no debe cambiar retroactivamente con
+    // él.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rol_autorizador", nullable = false, length = 30)
+    private RolUsuario rolAutorizador;
+
     @ManyToOne
     @JoinColumn(name = "vendedor_usuario_id", nullable = false)
     private Usuario vendedor;
@@ -47,6 +56,18 @@ public class AutorizacionDescuento {
 
     @Column(nullable = false, length = 500)
     private String motivo;
+
+    // Costo de compra del producto considerado para el piso de GERENTE en el momento
+    // de la emisión (T8). Auditoría: justifica por qué se permitió o no el descuento,
+    // aunque el costo del producto cambie después.
+    @Column(name = "costo_considerado", nullable = false, precision = 19, scale = 2)
+    private BigDecimal costoConsiderado;
+
+    // Monto de la mejor promoción automática de producto/categoría disponible en el
+    // momento de la emisión (T8), cero si no había ninguna. Ya se calculaba para
+    // informar al frontend; ahora también se conserva para auditoría.
+    @Column(name = "monto_promocion_automatica_disponible", nullable = false, precision = 19, scale = 2)
+    private BigDecimal montoPromocionAutomaticaDisponible;
 
     @Column(name = "carrito_id", nullable = false, length = 100)
     private String carritoId;

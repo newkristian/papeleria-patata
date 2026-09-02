@@ -13,6 +13,7 @@ import java.util.List;
 public interface VentaRepository extends JpaRepository<Venta, Long> {
     List<Venta> findByUsuarioId(Long usuarioId);
     List<Venta> findByClienteId(Long clienteId);
+    List<Venta> findByTiendaId(Long tiendaId);
     List<Venta> findByVentaAnonimaTrue();  // Ventas sin cliente registrado
     List<Venta> findByVentaAnonimaFalse(); // Ventas con cliente registrado
     List<Venta> findByFechaVentaBetween(LocalDateTime inicio, LocalDateTime fin);

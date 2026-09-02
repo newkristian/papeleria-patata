@@ -209,15 +209,33 @@ public class VentaService {
         return ventaGuardada;
     }
 
-    @Transactional(readOnly = true)
-    public List<Venta> getAllVentas() {
-        return ventaRepository.findAll();
-    }
+    // Control de acceso horizontal por tienda (T8): un ADMINISTRADOR ve todas las
+    // ventas; un VENDEDOR solo las de su propia tienda. Ningún endpoint de lectura
+    // acepta un tiendaId provisto por el cliente HTTP como autoridad — siempre se
+    // deriva del usuario autenticado.
 
     @Transactional(readOnly = true)
-    public Venta getVentaById(final Long id) {
-        return ventaRepository.findById(id)
+    public List<Venta> getAllVentas(final Usuario usuario) {
+        if (usuario.getRol() == RolUsuario.ADMINISTRADOR) {
+            return ventaRepository.findAll();
+        }
+        return ventaRepository.findByTiendaId(tiendaDeUsuarioONingunaVenta(usuario));
+    }
+
+    /**
+     * Un VENDEDOR que pide una venta de otra tienda recibe el mismo 404 que si no
+     * existiera, nunca un 403: confirmar que el ID existe en otra tienda sería en sí
+     * mismo una fuga de información (IDOR).
+     */
+    @Transactional(readOnly = true)
+    public Venta getVentaById(final Long id, final Usuario usuario) {
+        final Venta venta = ventaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con ID: " + id));
+        if (usuario.getRol() != RolUsuario.ADMINISTRADOR
+                && !venta.getTienda().getId().equals(tiendaDeUsuarioONingunaVenta(usuario))) {
+            throw new ResourceNotFoundException("Venta no encontrada con ID: " + id);
+        }
+        return venta;
     }
 
     @Transactional(readOnly = true)
@@ -226,11 +244,20 @@ public class VentaService {
     }
 
     @Transactional(readOnly = true)
-    public List<Venta> getVentasPorCliente(final Long clienteId) {
-        if (clienteId == 1L) {
-            return ventaRepository.findByVentaAnonimaTrue();
+    public List<Venta> getVentasPorCliente(final Long clienteId, final Usuario usuario) {
+        final List<Venta> ventas = clienteId == 1L
+                ? ventaRepository.findByVentaAnonimaTrue()
+                : ventaRepository.findByClienteId(clienteId);
+        if (usuario.getRol() == RolUsuario.ADMINISTRADOR) {
+            return ventas;
         }
-        return ventaRepository.findByClienteId(clienteId);
+        final Long tiendaId = tiendaDeUsuarioONingunaVenta(usuario);
+        return ventas.stream().filter(v -> v.getTienda().getId().equals(tiendaId)).toList();
+    }
+
+    /** -1L es un id de tienda inalcanzable: un VENDEDOR sin tienda asignada no ve ninguna venta. */
+    private Long tiendaDeUsuarioONingunaVenta(final Usuario usuario) {
+        return usuario.getTienda() != null ? usuario.getTienda().getId() : -1L;
     }
 
     private void aplicarPromocionAutomatica(final DetalleVenta detalle, final ResultadoPromocion resultado,

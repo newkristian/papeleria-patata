@@ -1,7 +1,7 @@
 # Registrar venta
 
-**Estado:** En desarrollo (backend completo, falta frontend)  
-**Última revisión:** 1 de septiembre de 2026
+**Estado:** Implementado
+**Última revisión:** 2 de septiembre de 2026
 
 ## Objetivo
 
@@ -37,16 +37,28 @@ promociones, descuentos autorizados y afectación de inventario.
   para el frontend".
 - Un fallo en cualquier línea (producto inactivo, precio inválido, stock insuficiente
   o autorización manual inválida/expirada/reutilizada) revierte la venta completa
-  antes de persistir nada; verificado con prueba manual de atomicidad.
+  antes de persistir nada; verificado con prueba unitaria y con una prueba de
+  integración real contra PostgreSQL (T8) que confirma que el stock ya descontado de
+  una línea previa también se revierte.
 - La venta histórica conserva su fotografía de descuento aunque la promoción usada se
-  desactive o modifique después.
+  desactive o modifique después; verificado también con integración real, no solo
+  con mocks.
+- Control de acceso horizontal por tienda (T8): `GET /ventas`, `GET /ventas/{id}` y
+  `GET /ventas/cliente/{clienteId}` filtran por la tienda del usuario autenticado
+  para `VENDEDOR` (`ADMINISTRADOR` ve todas). Una venta de otra tienda responde 404,
+  no 403, para no confirmar que el ID existe en otra tienda.
+- Interfaz de usuario completa en el POS (Tarea 7 / `docs/trabajo-actual/TAREAS_POS.md`):
+  buscador, carrito, cobro con presentación de promociones por línea, botón de
+  descuento manual y modal de reautenticación.
 
 ## Pendientes conocidos
 
-- Interfaz de usuario del carrito y del modal de autorización manual (Tarea 7).
-- Añadir pruebas de integración de extremo a extremo (además de las unitarias ya
-  existentes) y de aislamiento por tienda.
 - Revisar el comportamiento de stock para productos con cantidad desconocida.
+- Pruebas de componente del frontend (`CobroComponent`,
+  `ModalAutorizacionDescuentoComponent`): no se agregaron en T8, siguiendo la
+  convención ya establecida en este frontend de no tener specs por componente (solo a
+  nivel de servicio); es una decisión consciente, no un olvido — revisar si conviene
+  cambiar esa convención más adelante.
 
 ## Criterios de aceptación
 
@@ -55,6 +67,7 @@ promociones, descuentos autorizados y afectación de inventario.
 - Las líneas deben conservar precio de lista, promoción, descuento y total como
   fotografía histórica.
 - Un fallo en cualquier detalle revierte completamente venta e inventario.
+- Un `VENDEDOR` no puede ver ni consultar ventas de otra tienda.
 
 ## Requerimientos relacionados
 
