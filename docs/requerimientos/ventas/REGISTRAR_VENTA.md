@@ -31,7 +31,10 @@ promociones, descuentos autorizados y afectación de inventario.
 - Una línea puede traer una referencia opaca de autorización de descuento manual
   (Tarea 6, `POST /api/v1/autorizaciones-descuento`); si la trae, `crearVenta` la
   consume y revalida dentro de la misma transacción, y ese descuento reemplaza (no se
-  acumula con) la promoción automática de esa línea.
+  acumula con) la promoción automática de esa línea. El contrato completo para el
+  frontend (campos `carritoId`/`autorizacionDescuento`, ejemplos de request/response y
+  manejo de errores) está en `AUTORIZACION_DESCUENTO_MANUAL.md`, sección "Contrato
+  para el frontend".
 - Un fallo en cualquier línea (producto inactivo, precio inválido, stock insuficiente
   o autorización manual inválida/expirada/reutilizada) revierte la venta completa
   antes de persistir nada; verificado con prueba manual de atomicidad.
@@ -44,10 +47,6 @@ promociones, descuentos autorizados y afectación de inventario.
 - Añadir pruebas de integración de extremo a extremo (además de las unitarias ya
   existentes) y de aislamiento por tienda.
 - Revisar el comportamiento de stock para productos con cantidad desconocida.
-- Defecto preexistente detectado (no corregido, fuera de alcance): los `INSERT` de
-  `ventas` en `V2__datos_prueba.sql` usan IDs explícitos sin resincronizar
-  `ventas_id_seq`, por lo que la primera venta en una base recién sembrada falla con
-  violación de llave primaria hasta ejecutar `setval` manualmente.
 
 ## Criterios de aceptación
 
