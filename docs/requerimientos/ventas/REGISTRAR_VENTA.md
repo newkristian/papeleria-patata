@@ -1,6 +1,6 @@
 # Registrar venta
 
-**Estado:** En desarrollo  
+**Estado:** En desarrollo (backend completo, falta frontend)  
 **Última revisión:** 1 de septiembre de 2026
 
 ## Objetivo
@@ -26,18 +26,21 @@ promociones, descuentos autorizados y afectación de inventario.
 - Los importes de Producto, Venta, DetalleVenta y el acumulado del cliente utilizan
   `BigDecimal` y columnas `NUMERIC` con dos decimales.
 - Cada detalle conserva precio de lista, tipo y monto de descuento, precio final,
-  referencia a la promoción aplicada (de producto o de cliente, excluyentes), subtotal,
-  autorizador y motivo. Los campos de autorización manual permanecen sin usar hasta
-  implementar la Tarea 6.
-- Un fallo en cualquier línea (producto inactivo, precio inválido o stock insuficiente)
-  revierte la venta completa antes de persistir nada; verificado con prueba manual de
-  atomicidad.
+  referencia a la promoción aplicada (de producto o de cliente, excluyentes) o a la
+  autorización manual consumida, subtotal, autorizador y motivo.
+- Una línea puede traer una referencia opaca de autorización de descuento manual
+  (Tarea 6, `POST /api/v1/autorizaciones-descuento`); si la trae, `crearVenta` la
+  consume y revalida dentro de la misma transacción, y ese descuento reemplaza (no se
+  acumula con) la promoción automática de esa línea.
+- Un fallo en cualquier línea (producto inactivo, precio inválido, stock insuficiente
+  o autorización manual inválida/expirada/reutilizada) revierte la venta completa
+  antes de persistir nada; verificado con prueba manual de atomicidad.
 - La venta histórica conserva su fotografía de descuento aunque la promoción usada se
   desactive o modifique después.
 
 ## Pendientes conocidos
 
-- Implementar autorizaciones manuales de un solo uso (Tarea 6).
+- Interfaz de usuario del carrito y del modal de autorización manual (Tarea 7).
 - Añadir pruebas de integración de extremo a extremo (además de las unitarias ya
   existentes) y de aislamiento por tienda.
 - Revisar el comportamiento de stock para productos con cantidad desconocida.

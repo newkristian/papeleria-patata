@@ -1,7 +1,7 @@
 # Autorización de descuento manual
 
-**Estado:** Aprobado
-**Última revisión:** 28 de agosto de 2026
+**Estado:** Implementado (backend)
+**Última revisión:** 1 de septiembre de 2026
 
 ## Objetivo
 
@@ -98,6 +98,24 @@ Nunca deben registrarse contraseña, tokens completos ni datos secretos.
 
 ## Implementación verificada
 
-No existe un endpoint de reautenticación ni autorización temporal. La validación
-actual de `VentaService` solo compara el rol del vendedor y acepta un descuento global
-enviado por el cliente, por lo que no satisface este requerimiento.
+- `POST /api/v1/autorizaciones-descuento` reautentica al gerente/administrador con
+  usuario y contraseña (mismo `AuthenticationManager` que `/auth/login`), valida rol,
+  usuario activo, tienda del gerente y el piso de costo (`GERENTE` no puede quedar
+  bajo costo; `ADMINISTRADOR` sí, sin superar 30%).
+- Emite una autorización opaca de 2 minutos; solo se persiste el hash SHA-256 del
+  token, nunca el token en claro.
+- `VentaService.crearVenta` consume la autorización dentro de la misma transacción de
+  la venta, revalidando producto, cantidad, vendedor, tienda y carrito, y consumiéndola
+  de forma atómica (`UPDATE ... WHERE consumida = false AND vigente`) para que dos
+  consumos concurrentes no acepten el mismo permiso.
+- El descuento manual reemplaza la promoción automática de la línea; nunca se
+  acumulan. La respuesta de la solicitud incluye la diferencia frente a la mejor
+  promoción automática de producto/categoría disponible (sin considerar cliente, por
+  ahora).
+- Límite de 5 intentos fallidos por vendedor en 15 minutos (en memoria, documentado
+  como limitación de instancia única).
+- Se corrigió un defecto preexistente en `GlobalExceptionHandler`: credenciales
+  inválidas devolvían 500 en vez de 401, afectando también a `/auth/login`.
+
+Pendiente: interfaz de usuario del modal de autorización y su manejo de expiración,
+rechazo y limpieza de estado sensible (Tarea 7).

@@ -1,5 +1,6 @@
 package com.kristianconk.api_papeleria.ventas;
 
+import com.kristianconk.api_papeleria.autorizacion.AutorizacionDescuento;
 import com.kristianconk.api_papeleria.cliente.PromocionCliente;
 import com.kristianconk.api_papeleria.enums.TipoDescuento;
 import com.kristianconk.api_papeleria.producto.Producto;
@@ -63,6 +64,13 @@ public class DetalleVenta {
 
     @Column(length = 500)
     private String motivoDescuento;
+
+    // Referencia de auditoría a la autorización manual (T6) efectivamente consumida
+    // para esta línea. Coherente con tipoDescuento: presente si y solo si es MANUAL
+    // (ver chk_detalle_autorizacion_manual en V10).
+    @ManyToOne
+    @JoinColumn(name = "autorizacion_descuento_id")
+    private AutorizacionDescuento autorizacionDescuento;
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal subtotal;

@@ -37,6 +37,21 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> manejarAutenticacionFallida(
+            final org.springframework.security.core.AuthenticationException e) {
+        // Mensaje genérico deliberado: nunca se revela si el usuario existe, está
+        // inactivo o la contraseña es incorrecta.
+        log.warn("[POS/GlobalExceptionHandler] - MANEJAR_AUTENTICACION_FALLIDA: {}", e.getClass().getSimpleName());
+        final ErrorResponse error = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Autenticación fallida",
+                "Usuario o contraseña incorrectos, o la cuenta no está activa",
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> manejarResourceNotFound(final ResourceNotFoundException e) {
         log.error("[POS/GlobalExceptionHandler] - MANEJAR_RESOURCE_NOT_FOUND: errorMessage: {}", e.getMessage());

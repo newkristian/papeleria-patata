@@ -1,5 +1,7 @@
 package com.kristianconk.api_papeleria.ventas;
 
+import com.kristianconk.api_papeleria.autorizacion.AutorizacionDescuento;
+import com.kristianconk.api_papeleria.autorizacion.AutorizacionDescuentoService;
 import com.kristianconk.api_papeleria.cliente.Cliente;
 import com.kristianconk.api_papeleria.cliente.ClienteRepository;
 import com.kristianconk.api_papeleria.cliente.PromocionCliente;
@@ -60,6 +62,9 @@ class VentaServiceTest {
 
     @Mock
     private MotorPromocionesService motorPromocionesService;
+
+    @Mock
+    private AutorizacionDescuentoService autorizacionDescuentoService;
 
     @Mock
     private FolioGenerador folioGenerador;
@@ -320,5 +325,92 @@ class VentaServiceTest {
         assertEquals(promocionCliente, detalle.getPromocionCliente());
         assertNull(detalle.getPromocionProducto());
         assertEquals(new BigDecimal("54.00"), detalle.getSubtotal());
+    }
+
+    private AutorizacionDescuento autorizacionManual(final Usuario autorizador, final BigDecimal porcentaje) {
+        final AutorizacionDescuento autorizacion = new AutorizacionDescuento();
+        autorizacion.setId(9L);
+        autorizacion.setAutorizador(autorizador);
+        autorizacion.setVendedor(vendedor);
+        autorizacion.setPorcentaje(porcentaje);
+        autorizacion.setMotivo("Cliente frecuente, aprobado por gerencia");
+        return autorizacion;
+    }
+
+    @Test
+    void crearVenta_consumeAutorizacionManualYNoInvocaElMotorAutomatico() {
+        final Usuario gerente = new Usuario();
+        gerente.setId(5L);
+        gerente.setRol(RolUsuario.GERENTE);
+
+        final VentaRequestDTO request = new VentaRequestDTO(
+                null,
+                MetodoPago.EFECTIVO,
+                List.of(new DetalleVentaRequestDTO(10L, 2, "referencia-opaca")),
+                "carrito-1");
+
+        when(folioGenerador.generarFolio()).thenReturn("V-0009");
+        when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteAnonimo));
+        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(autorizacionDescuentoService.consumir("referencia-opaca", producto, 2, vendedor, "carrito-1"))
+                .thenReturn(autorizacionManual(gerente, new BigDecimal("15.00")));
+        when(ventaRepository.save(any(Venta.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        final Venta resultado = ventaService.crearVenta(request, vendedor);
+
+        final DetalleVenta detalle = resultado.getDetalles().getFirst();
+        assertEquals(TipoDescuento.MANUAL, detalle.getTipoDescuento());
+        assertEquals(new BigDecimal("15.00"), detalle.getPorcentajeDescuento());
+        // subtotal lista 60.00, 15% = 9.00 de descuento
+        assertEquals(new BigDecimal("9.00"), detalle.getMontoDescuento());
+        assertEquals(new BigDecimal("51.00"), detalle.getSubtotal());
+        assertEquals(gerente, detalle.getAutorizadoPor());
+        assertEquals("Cliente frecuente, aprobado por gerencia", detalle.getMotivoDescuento());
+        assertNull(detalle.getPromocionProducto());
+        assertNull(detalle.getPromocionCliente());
+
+        verify(motorPromocionesService, never()).evaluar(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any());
+    }
+
+    @Test
+    void crearVenta_referenciaDeAutorizacionInvalidaPropagaExcepcionYNoPersisteVenta() {
+        final VentaRequestDTO request = new VentaRequestDTO(
+                null,
+                MetodoPago.EFECTIVO,
+                List.of(new DetalleVentaRequestDTO(10L, 2, "referencia-vencida")),
+                "carrito-1");
+
+        when(folioGenerador.generarFolio()).thenReturn("V-0010");
+        when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteAnonimo));
+        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(autorizacionDescuentoService.consumir("referencia-vencida", producto, 2, vendedor, "carrito-1"))
+                .thenThrow(new IllegalArgumentException("La autorización de descuento manual es inválida, expiró o "
+                        + "ya fue utilizada"));
+
+        assertThrows(IllegalArgumentException.class, () -> ventaService.crearVenta(request, vendedor));
+
+        verify(ventaRepository, never()).save(any(Venta.class));
+    }
+
+    @Test
+    void crearVenta_dosAutorizacionesDistintasParaElMismoProductoConsolidadoSeRechaza() {
+        final VentaRequestDTO request = new VentaRequestDTO(
+                null,
+                MetodoPago.EFECTIVO,
+                List.of(
+                        new DetalleVentaRequestDTO(10L, 1, "referencia-a"),
+                        new DetalleVentaRequestDTO(10L, 1, "referencia-b")),
+                "carrito-1");
+
+        when(folioGenerador.generarFolio()).thenReturn("V-0011");
+        when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteAnonimo));
+        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+
+        assertThrows(IllegalArgumentException.class, () -> ventaService.crearVenta(request, vendedor));
+
+        verify(autorizacionDescuentoService, never()).consumir(any(), any(), org.mockito.ArgumentMatchers.anyInt(),
+                any(), any());
+        verify(motorPromocionesService, never()).evaluar(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any());
+        verify(ventaRepository, never()).save(any(Venta.class));
     }
 }

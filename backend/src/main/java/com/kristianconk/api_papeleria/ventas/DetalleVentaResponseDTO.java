@@ -18,6 +18,7 @@ public record DetalleVentaResponseDTO(
         BigDecimal precioUnitarioFinal,
         BigDecimal subtotal,
         Long autorizadoPorUsuarioId,
-        String motivoDescuento
+        String motivoDescuento,
+        Long autorizacionDescuentoId
 ) {
 }
