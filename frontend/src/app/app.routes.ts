@@ -13,6 +13,6 @@ export const routes: Routes = [
   {
     path: 'pos',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent) // Placeholder
+    loadComponent: () => import('./features/pos/pos-layout/pos-layout').then(m => m.PosLayoutComponent)
   }
 ];

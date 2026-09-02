@@ -1,0 +1,38 @@
+<div class="h-screen flex flex-col bg-gray-100 font-sans">
+  <!-- Barra superior: propia del POS, no reutiliza la landing pública. -->
+  <header class="bg-white border-b border-gray-200 shadow-sm shrink-0">
+    <div class="px-4 sm:px-6 h-16 flex items-center justify-between">
+      <span class="text-xl font-bold text-blue-600 tracking-tight">Papelería Patata · POS</span>
+      <button
+        type="button"
+        (click)="cerrarSesion()"
+        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+        Cerrar sesión
+      </button>
+    </div>
+  </header>
+
+  <!-- Área principal: buscador a la izquierda, carrito a la derecha. Apila en
+       pantallas angostas; pensada para operación en tablet apaisada. -->
+  <main class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 p-4">
+    <section
+      aria-label="Buscador de productos"
+      class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 min-h-0 overflow-y-auto flex items-center justify-center">
+      <p class="text-gray-400 text-center">
+        Buscador de productos — próximamente
+        <br>
+        <span class="text-sm">(Sub-tarea 2: BUSQUEDA_PRODUCTOS_POS.md)</span>
+      </p>
+    </section>
+
+    <aside
+      aria-label="Carrito de venta"
+      class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 min-h-0 overflow-y-auto flex items-center justify-center">
+      <p class="text-gray-400 text-center">
+        Carrito de venta — próximamente
+        <br>
+        <span class="text-sm">(Sub-tarea 3: CARRITO_VENTA.md)</span>
+      </p>
+    </aside>
+  </main>
+</div>

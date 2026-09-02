@@ -19,6 +19,16 @@ Autenticar empleados y entregar tokens firmados para consumir la API protegida.
 
 - Definir tratamiento de expiración, respuestas 401 y cierre de sesión automático.
 - Atender el riesgo XSS documentado en `seguridad/PROTECCION_XSS.md`.
+- El JWT solo lleva `sub` (username); `AuthResponse` no expone nombre, rol ni tienda
+  del usuario autenticado. Hoy el frontend no tiene forma de saber quién inició sesión
+  ni su rol sin decodificar el token de forma no soportada. No bloquea ninguna
+  sub-tarea de `docs/requerimientos/pos/` conocida hasta ahora (detectado durante la
+  Tarea 7 de `TAREAS_VENTAS.md`; ver `docs/trabajo-actual/TAREAS_POS.md`), pero limita
+  cualquier UI futura que necesite mostrar "Cajero: <nombre>" o condicionar algo al rol
+  del usuario en sesión sin hacer una llamada adicional. Antes de implementarlo, decidir
+  entre: (a) agregar `nombre`/`rol`/`tiendaId`/`tiendaNombre` a `AuthResponse`, o (b) un
+  endpoint dedicado `GET /api/v1/auth/me` (o similar) que el frontend consulte tras el
+  login.
 
 ## Criterios de aceptación
 
