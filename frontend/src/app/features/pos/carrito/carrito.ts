@@ -1,12 +1,14 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { AutorizacionManualLinea } from '../../../core/models/carrito.model';
 import { ClienteResumen } from '../../../core/models/cliente.model';
 import { CarritoService } from '../../../core/services/carrito.service';
 import { ClienteService } from '../../../core/services/cliente.service';
+import { ModalAutorizacionDescuentoComponent } from '../modal-autorizacion-descuento/modal-autorizacion-descuento';
 
 @Component({
   selector: 'app-carrito',
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, ModalAutorizacionDescuentoComponent],
   templateUrl: './carrito.html',
 })
 export class CarritoComponent implements OnInit {
@@ -17,6 +19,9 @@ export class CarritoComponent implements OnInit {
   readonly clientes = signal<ClienteResumen[]>([]);
   readonly cargandoClientes = signal(false);
   readonly errorClientes = signal<string | null>(null);
+
+  /** productoId de la línea cuyo modal de descuento manual está abierto, o null si ninguno. */
+  readonly lineaModalAbierta = signal<number | null>(null);
 
   ngOnInit(): void {
     this.cargandoClientes.set(true);
@@ -46,5 +51,17 @@ export class CarritoComponent implements OnInit {
     if (!Number.isNaN(cantidad)) {
       this.carrito.establecerCantidad(productoId, cantidad);
     }
+  }
+
+  abrirModalDescuento(productoId: number): void {
+    this.lineaModalAbierta.set(productoId);
+  }
+
+  onAutorizacionOtorgada(productoId: number, autorizacion: AutorizacionManualLinea): void {
+    this.carrito.otorgarDescuentoManual(productoId, autorizacion);
+  }
+
+  cerrarModalDescuento(): void {
+    this.lineaModalAbierta.set(null);
   }
 }

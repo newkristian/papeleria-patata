@@ -71,11 +71,46 @@
             @if (!linea.cantidadDesconocida && linea.cantidad >= linea.stockActual) {
               <p class="text-xs text-amber-600 mt-1">Máximo disponible en stock: {{ linea.stockActual }}</p>
             }
+
+            @if (linea.autorizacionManual; as autorizacion) {
+              <div class="mt-2 flex items-center justify-between bg-blue-50 rounded-md px-2 py-1">
+                <span class="text-xs text-blue-700 font-medium">
+                  Descuento manual {{ autorizacion.porcentaje }}% autorizado
+                </span>
+                <button
+                  type="button"
+                  (click)="carrito.quitarDescuentoManual(linea.productoId)"
+                  class="text-xs text-blue-700 hover:text-blue-900 underline">
+                  Quitar
+                </button>
+              </div>
+            } @else {
+              <button
+                type="button"
+                (click)="abrirModalDescuento(linea.productoId)"
+                class="mt-2 text-xs text-gray-500 hover:text-blue-600 underline">
+                Cambiar descuento
+              </button>
+            }
           </li>
         }
       </ul>
     }
   </div>
+
+  @if (lineaModalAbierta(); as productoId) {
+    @for (linea of carrito.lineas(); track linea.productoId) {
+      @if (linea.productoId === productoId) {
+        <app-modal-autorizacion-descuento
+          [productoId]="linea.productoId"
+          [productoNombre]="linea.nombre"
+          [cantidad]="linea.cantidad"
+          [carritoId]="carrito.carritoId()"
+          (autorizada)="onAutorizacionOtorgada(linea.productoId, $event)"
+          (cerrado)="cerrarModalDescuento()" />
+      }
+    }
+  }
 
   <!-- Totales -->
   @if (carrito.lineas().length > 0) {

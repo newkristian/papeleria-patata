@@ -82,6 +82,7 @@ export class CobroComponent {
     const detalles: DetalleVentaRequest[] = this.carrito.lineas().map((linea) => ({
       productoId: linea.productoId,
       cantidad: linea.cantidad,
+      ...(linea.autorizacionManual ? { autorizacionDescuento: linea.autorizacionManual.referencia } : {}),
     }));
 
     this.enviando.set(true);

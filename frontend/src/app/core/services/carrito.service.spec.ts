@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { AutorizacionManualLinea } from '../models/carrito.model';
 import { ClienteResumen } from '../models/cliente.model';
 import { ProductoListado } from '../models/producto.model';
 import { CarritoService } from './carrito.service';
@@ -133,5 +134,51 @@ describe('CarritoService', () => {
     service.agregarProducto(producto());
 
     expect(service.carritoId()).toBe(carritoIdInicial);
+  });
+
+  const autorizacion: AutorizacionManualLinea = {
+    referencia: 'ref-1',
+    porcentaje: 15,
+    expiraEn: '2026-01-01T00:00:00',
+    motivo: 'Cliente frecuente',
+  };
+
+  it('should start every new line without a manual authorization', () => {
+    const service = TestBed.inject(CarritoService);
+
+    service.agregarProducto(producto());
+
+    expect(service.lineas()[0].autorizacionManual).toBeNull();
+  });
+
+  it('should apply and remove a manual discount authorization on a line', () => {
+    const service = TestBed.inject(CarritoService);
+    service.agregarProducto(producto());
+
+    service.otorgarDescuentoManual(1, autorizacion);
+    expect(service.lineas()[0].autorizacionManual).toEqual(autorizacion);
+
+    service.quitarDescuentoManual(1);
+    expect(service.lineas()[0].autorizacionManual).toBeNull();
+  });
+
+  it('should discard the manual authorization when cantidad changes', () => {
+    const service = TestBed.inject(CarritoService);
+    service.agregarProducto(producto({ stockActual: 10 }));
+    service.otorgarDescuentoManual(1, autorizacion);
+
+    service.incrementar(1);
+
+    expect(service.lineas()[0].autorizacionManual).toBeNull();
+  });
+
+  it('should discard the manual authorization when the same product is added again', () => {
+    const service = TestBed.inject(CarritoService);
+    service.agregarProducto(producto({ stockActual: 10 }));
+    service.otorgarDescuentoManual(1, autorizacion);
+
+    service.agregarProducto(producto({ stockActual: 10 }));
+
+    expect(service.lineas()[0].autorizacionManual).toBeNull();
   });
 });

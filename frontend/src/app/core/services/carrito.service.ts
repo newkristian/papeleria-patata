@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { AutorizacionManualLinea, LineaCarrito } from '../models/carrito.model';
 import { ClienteResumen } from '../models/cliente.model';
-import { LineaCarrito } from '../models/carrito.model';
 import { ProductoListado } from '../models/producto.model';
 
 /**
@@ -48,6 +48,7 @@ export class CarritoService {
         cantidad: 1,
         cantidadDesconocida: producto.cantidadDesconocida,
         stockActual: producto.stockActual,
+        autorizacionManual: null,
       },
     ]);
   }
@@ -77,6 +78,9 @@ export class CarritoService {
    * mínimo — para llegar a 0 se usa `eliminar()` explícitamente — y al stock conocido
    * como máximo, cuando el producto no tiene cantidad desconocida. Es una ayuda de UX,
    * no el control real: el backend siempre revalida el stock al confirmar la venta.
+   *
+   * Cualquier autorización de descuento manual (T6) sobre la línea se descarta aquí:
+   * fue emitida para una cantidad exacta, y cambiarla la invalida.
    */
   establecerCantidad(productoId: number, cantidad: number): void {
     this._lineas.update((actuales) =>
@@ -87,7 +91,7 @@ export class CarritoService {
         const maximo = linea.cantidadDesconocida ? Number.MAX_SAFE_INTEGER : Math.max(linea.stockActual, 1);
         const cantidadEntera = Math.trunc(cantidad) || 1;
         const nuevaCantidad = Math.min(Math.max(1, cantidadEntera), maximo);
-        return { ...linea, cantidad: nuevaCantidad };
+        return { ...linea, cantidad: nuevaCantidad, autorizacionManual: null };
       }),
     );
   }
@@ -98,6 +102,24 @@ export class CarritoService {
 
   seleccionarCliente(cliente: ClienteResumen | null): void {
     this._clienteSeleccionado.set(cliente);
+  }
+
+  /** Aplica una autorización de descuento manual (T6) ya emitida a una línea existente. */
+  otorgarDescuentoManual(productoId: number, autorizacion: AutorizacionManualLinea): void {
+    this._lineas.update((actuales) =>
+      actuales.map((linea) => (linea.productoId === productoId ? { ...linea, autorizacionManual: autorizacion } : linea)),
+    );
+  }
+
+  /**
+   * Quita el descuento manual de una línea sin tocar su cantidad. La autorización ya
+   * emitida por el backend no se cancela (no existe endpoint para eso): simplemente
+   * deja de enviarse en la venta y expira sola a los 2 minutos si nadie la usa.
+   */
+  quitarDescuentoManual(productoId: number): void {
+    this._lineas.update((actuales) =>
+      actuales.map((linea) => (linea.productoId === productoId ? { ...linea, autorizacionManual: null } : linea)),
+    );
   }
 
   /** Limpia el carrito completo tras confirmar una venta (o para empezar de nuevo). */

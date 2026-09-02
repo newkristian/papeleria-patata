@@ -1,0 +1,128 @@
+<div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-5">
+    @if (fase() === 'formulario') {
+      <h3 class="text-lg font-bold text-gray-900 mb-1">Autorizar descuento manual</h3>
+      <p class="text-sm text-gray-500 mb-4">{{ productoNombre() }} · {{ cantidad() }} unidad(es)</p>
+
+      <div class="space-y-3">
+        <div>
+          <label for="autorizador-username" class="block text-sm font-medium text-gray-700 mb-1">
+            Usuario de gerente o administrador
+          </label>
+          <input
+            id="autorizador-username"
+            type="text"
+            autocomplete="off"
+            [value]="username()"
+            (input)="onUsernameInput($any($event.target).value)"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+        </div>
+        <div>
+          <label for="autorizador-password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+          <input
+            id="autorizador-password"
+            type="password"
+            autocomplete="off"
+            [value]="password()"
+            (input)="onPasswordInput($any($event.target).value)"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+        </div>
+        <div>
+          <label for="autorizador-porcentaje" class="block text-sm font-medium text-gray-700 mb-1">
+            Porcentaje de descuento (0–30)
+          </label>
+          <input
+            id="autorizador-porcentaje"
+            type="number"
+            min="0"
+            max="30"
+            step="0.01"
+            (input)="onPorcentajeInput($any($event.target).value)"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+        </div>
+        <div>
+          <label for="autorizador-motivo" class="block text-sm font-medium text-gray-700 mb-1">Motivo</label>
+          <textarea
+            id="autorizador-motivo"
+            rows="2"
+            [value]="motivo()"
+            (input)="onMotivoInput($any($event.target).value)"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+        </div>
+
+        @if (error()) {
+          <div class="bg-red-50 border-l-4 border-red-400 p-3">
+            <p class="text-sm text-red-700">{{ error() }}</p>
+          </div>
+        }
+      </div>
+
+      <div class="flex gap-2 mt-5">
+        <button
+          type="button"
+          (click)="cancelar()"
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          [disabled]="enviando() || !formularioValido()"
+          (click)="solicitar()"
+          class="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          {{ enviando() ? 'Verificando…' : 'Autorizar' }}
+        </button>
+      </div>
+    } @else if (resultado(); as resultado) {
+      <h3 class="text-lg font-bold text-gray-900 mb-1">Autorización obtenida</h3>
+      <p class="text-sm text-gray-500 mb-4">{{ productoNombre() }} · {{ cantidad() }} unidad(es)</p>
+
+      <div class="space-y-2 text-sm bg-gray-50 rounded-md p-3">
+        <div class="flex justify-between">
+          <span class="text-gray-600">Descuento manual</span>
+          <span class="font-semibold text-gray-900">
+            {{ resultado.porcentaje }}% (-${{ resultado.montoDescuentoEstimado | number: '1.2-2' }})
+          </span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Precio final estimado</span>
+          <span class="font-semibold text-gray-900">${{ resultado.precioFinalEstimado | number: '1.2-2' }}</span>
+        </div>
+        @if (resultado.promocionAutomaticaDisponible) {
+          <div class="flex justify-between">
+            <span class="text-gray-600">Promoción automática disponible</span>
+            <span class="text-gray-900">${{ resultado.montoPromocionAutomatica | number: '1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Diferencia (manual − automática)</span>
+            <span
+              class="font-semibold"
+              [class.text-green-700]="resultado.diferenciaVsPromocionAutomatica >= 0"
+              [class.text-amber-600]="resultado.diferenciaVsPromocionAutomatica < 0">
+              {{ resultado.diferenciaVsPromocionAutomatica >= 0 ? '+' : '' }}${{
+                resultado.diferenciaVsPromocionAutomatica | number: '1.2-2'
+              }}
+            </span>
+          </div>
+        } @else {
+          <p class="text-xs text-gray-500">No hay una promoción automática disponible para comparar.</p>
+        }
+        <p class="text-xs text-gray-400 pt-1">Vigente por 2 minutos desde la emisión.</p>
+      </div>
+
+      <div class="flex gap-2 mt-5">
+        <button
+          type="button"
+          (click)="descartar()"
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+          Descartar
+        </button>
+        <button
+          type="button"
+          (click)="aplicar()"
+          class="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+          Aplicar a la venta
+        </button>
+      </div>
+    }
+  </div>
+</div>
