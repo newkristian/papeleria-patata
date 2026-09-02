@@ -1,0 +1,107 @@
+<div class="mt-4 pt-4 border-t border-gray-200">
+  @if (ventaConfirmada(); as venta) {
+    <!-- Recibo: solo datos reales devueltos por el servidor -->
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold text-gray-900">Venta confirmada</h3>
+        <span class="text-xs text-gray-500">{{ venta.folio }}</span>
+      </div>
+
+      <ul class="space-y-2 text-sm">
+        @for (detalle of venta.detalles; track detalle.id) {
+          <li class="border-b border-gray-100 pb-2">
+            <div class="flex justify-between">
+              <span class="text-gray-800">{{ detalle.producto.nombre }} × {{ detalle.cantidad }}</span>
+              <span class="font-medium text-gray-900">${{ detalle.subtotal | number: '1.2-2' }}</span>
+            </div>
+            @if (detalle.tipoDescuento !== 'NINGUNO') {
+              <p class="text-xs text-green-700">
+                {{ etiquetasDescuento[detalle.tipoDescuento] }} ({{ detalle.porcentajeDescuento }}%) — ahorro ${{
+                  detalle.montoDescuento | number: '1.2-2'
+                }}
+              </p>
+            }
+          </li>
+        }
+      </ul>
+
+      <div class="text-sm space-y-1">
+        <div class="flex justify-between text-gray-500">
+          <span>Subtotal</span>
+          <span>${{ venta.subtotal | number: '1.2-2' }}</span>
+        </div>
+        @if (venta.descuento > 0) {
+          <div class="flex justify-between text-green-700">
+            <span>Descuento total</span>
+            <span>-${{ venta.descuento | number: '1.2-2' }}</span>
+          </div>
+        }
+        <div class="flex justify-between text-lg font-bold text-gray-900">
+          <span>Total</span>
+          <span>${{ venta.total | number: '1.2-2' }}</span>
+        </div>
+        @if (cambioReal() !== null) {
+          <div class="flex justify-between" [class.text-red-600]="cambioReal()! < 0" [class.text-gray-700]="cambioReal()! >= 0">
+            <span>Cambio</span>
+            <span>${{ cambioReal() | number: '1.2-2' }}</span>
+          </div>
+        }
+      </div>
+
+      <button
+        type="button"
+        (click)="nuevaVenta()"
+        class="w-full mt-2 inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+        Nueva venta
+      </button>
+    </div>
+  } @else {
+    <!-- Formulario de cobro -->
+    <div class="space-y-3">
+      <div>
+        <label for="metodo-pago" class="block text-sm font-medium text-gray-700 mb-1">Método de pago</label>
+        <select
+          id="metodo-pago"
+          [value]="metodoPago()"
+          (change)="onMetodoPagoChange($any($event.target).value)"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
+          @for (metodo of metodosPago; track metodo.valor) {
+            <option [value]="metodo.valor">{{ metodo.etiqueta }}</option>
+          }
+        </select>
+      </div>
+
+      @if (metodoPago() === 'EFECTIVO') {
+        <div>
+          <label for="monto-recibido" class="block text-sm font-medium text-gray-700 mb-1">Monto recibido</label>
+          <input
+            id="monto-recibido"
+            type="number"
+            min="0"
+            step="0.01"
+            (input)="onMontoRecibidoInput($any($event.target).value)"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm" />
+          @if (cambioEstimado() !== null) {
+            <p class="text-xs mt-1" [class.text-red-600]="cambioEstimado()! < 0" [class.text-gray-500]="cambioEstimado()! >= 0">
+              Cambio estimado: ${{ cambioEstimado() | number: '1.2-2' }}
+            </p>
+          }
+        </div>
+      }
+
+      @if (error()) {
+        <div class="bg-red-50 border-l-4 border-red-400 p-3">
+          <p class="text-sm text-red-700">{{ error() }}</p>
+        </div>
+      }
+
+      <button
+        type="button"
+        [disabled]="carrito.lineas().length === 0 || enviando()"
+        (click)="cobrar()"
+        class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+        {{ enviando() ? 'Procesando…' : 'Cobrar' }}
+      </button>
+    </div>
+  }
+</div>

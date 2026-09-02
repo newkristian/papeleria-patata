@@ -113,14 +113,25 @@ describe('CarritoService', () => {
     expect(service.clienteSeleccionado()).toBeNull();
   });
 
-  it('should clear everything on vaciar', () => {
+  it('should clear everything on vaciar and issue a new carritoId', () => {
     const service = TestBed.inject(CarritoService);
     service.agregarProducto(producto());
     service.seleccionarCliente({ id: 2, nombre: 'Ana', telefono: '555', totalCompras: 0, nivel: 'Regular' });
+    const carritoIdAnterior = service.carritoId();
 
     service.vaciar();
 
     expect(service.lineas()).toEqual([]);
     expect(service.clienteSeleccionado()).toBeNull();
+    expect(service.carritoId()).not.toBe(carritoIdAnterior);
+  });
+
+  it('should expose a stable carritoId that does not change while adding lines', () => {
+    const service = TestBed.inject(CarritoService);
+    const carritoIdInicial = service.carritoId();
+
+    service.agregarProducto(producto());
+
+    expect(service.carritoId()).toBe(carritoIdInicial);
   });
 });

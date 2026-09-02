@@ -16,9 +16,14 @@ import { ProductoListado } from '../models/producto.model';
 export class CarritoService {
   private readonly _lineas = signal<LineaCarrito[]>([]);
   private readonly _clienteSeleccionado = signal<ClienteResumen | null>(null);
+  // Identifica esta operación de venta ante el backend para atar autorizaciones de
+  // descuento manual (T6) a este carrito y no a otro. Se genera perezosamente y se
+  // renueva en cada vaciar() (nueva venta = nuevo carrito).
+  private readonly _carritoId = signal(crypto.randomUUID());
 
   readonly lineas = this._lineas.asReadonly();
   readonly clienteSeleccionado = this._clienteSeleccionado.asReadonly();
+  readonly carritoId = this._carritoId.asReadonly();
 
   readonly totalArticulos = computed(() => this._lineas().reduce((acc, l) => acc + l.cantidad, 0));
 
@@ -95,9 +100,10 @@ export class CarritoService {
     this._clienteSeleccionado.set(cliente);
   }
 
-  /** Limpia el carrito completo. Pensado para después de confirmar una venta (T4/Sub-tarea 4). */
+  /** Limpia el carrito completo tras confirmar una venta (o para empezar de nuevo). */
   vaciar(): void {
     this._lineas.set([]);
     this._clienteSeleccionado.set(null);
+    this._carritoId.set(crypto.randomUUID());
   }
 }
