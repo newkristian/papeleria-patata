@@ -17,22 +17,23 @@
   <main class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 p-4">
     <section
       aria-label="Buscador de productos"
-      class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 min-h-0 overflow-y-auto flex items-center justify-center">
-      <p class="text-gray-400 text-center">
-        Buscador de productos — próximamente
-        <br>
-        <span class="text-sm">(Sub-tarea 2: BUSQUEDA_PRODUCTOS_POS.md)</span>
-      </p>
+      class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 min-h-0">
+      <app-buscador-productos (productoSeleccionado)="onProductoSeleccionado($event)" />
     </section>
 
     <aside
       aria-label="Carrito de venta"
-      class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 min-h-0 overflow-y-auto flex items-center justify-center">
-      <p class="text-gray-400 text-center">
-        Carrito de venta — próximamente
-        <br>
-        <span class="text-sm">(Sub-tarea 3: CARRITO_VENTA.md)</span>
+      class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 min-h-0 overflow-y-auto">
+      <p class="text-gray-400 text-center text-sm mb-4">
+        Carrito de venta — próximamente (Sub-tarea 3: CARRITO_VENTA.md)
       </p>
+      @if (seleccionRecienteStub().length > 0) {
+        <ul class="space-y-2">
+          @for (producto of seleccionRecienteStub(); track producto.id) {
+            <li class="text-sm text-gray-700 border-b border-gray-100 pb-2">{{ producto.nombre }}</li>
+          }
+        </ul>
+      }
     </aside>
   </main>
 </div>

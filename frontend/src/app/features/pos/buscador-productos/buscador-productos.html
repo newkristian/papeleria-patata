@@ -1,0 +1,79 @@
+<div class="h-full flex flex-col">
+  <div class="shrink-0">
+    <label for="buscador-input" class="sr-only">Buscar producto por nombre o código de barras</label>
+    <input
+      #inputBusqueda
+      id="buscador-input"
+      type="text"
+      autofocus
+      autocomplete="off"
+      placeholder="Nombre o código de barras…"
+      [value]="termino()"
+      (input)="onInput($any($event.target).value)"
+      (keyup.enter)="onEnter()"
+      class="w-full px-4 py-3 text-lg border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+  </div>
+
+  <div class="flex-1 min-h-0 overflow-y-auto mt-4">
+    @switch (estado()) {
+      @case ('inicial') {
+        <p class="text-gray-400 text-center mt-8">
+          Escanea un código de barras o escribe el nombre de un producto.
+        </p>
+      }
+      @case ('cargando') {
+        <p class="text-gray-400 text-center mt-8">Buscando…</p>
+      }
+      @case ('vacio') {
+        <p class="text-gray-400 text-center mt-8">
+          Sin resultados para «{{ termino() }}».
+        </p>
+      }
+      @case ('error') {
+        <div class="text-center mt-8">
+          <p class="text-red-600 mb-3">{{ errorMensaje() }}</p>
+          <button
+            type="button"
+            (click)="reintentar()"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+            Reintentar
+          </button>
+        </div>
+      }
+      @case ('listo') {
+        <ul class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+          @for (producto of resultados(); track producto.id) {
+            <li>
+              <button
+                type="button"
+                [disabled]="agotado(producto)"
+                (click)="seleccionar(producto)"
+                class="w-full text-left p-4 border rounded-lg shadow-sm transition-colors"
+                [class.bg-white]="!agotado(producto)"
+                [class.border-gray-200]="!agotado(producto)"
+                [class.hover:border-blue-400]="!agotado(producto)"
+                [class.hover:shadow-md]="!agotado(producto)"
+                [class.bg-gray-50]="agotado(producto)"
+                [class.border-gray-100]="agotado(producto)"
+                [class.opacity-60]="agotado(producto)"
+                [class.cursor-not-allowed]="agotado(producto)">
+                <p class="font-semibold text-gray-900 truncate">{{ producto.nombre }}</p>
+                <p class="text-xs text-gray-500 mt-0.5">{{ producto.codigoBarras }} · {{ producto.categoriaNombre }}</p>
+                <div class="flex items-center justify-between mt-3">
+                  <span class="text-lg font-bold text-blue-600">${{ producto.precioVenta | number: '1.2-2' }}</span>
+                  @if (producto.cantidadDesconocida) {
+                    <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">Sin control de stock</span>
+                  } @else if (agotado(producto)) {
+                    <span class="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700">Sin stock</span>
+                  } @else {
+                    <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">Stock: {{ producto.stockActual }}</span>
+                  }
+                </div>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+</div>
