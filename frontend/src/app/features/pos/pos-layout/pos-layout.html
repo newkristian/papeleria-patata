@@ -23,17 +23,8 @@
 
     <aside
       aria-label="Carrito de venta"
-      class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 min-h-0 overflow-y-auto">
-      <p class="text-gray-400 text-center text-sm mb-4">
-        Carrito de venta — próximamente (Sub-tarea 3: CARRITO_VENTA.md)
-      </p>
-      @if (seleccionRecienteStub().length > 0) {
-        <ul class="space-y-2">
-          @for (producto of seleccionRecienteStub(); track producto.id) {
-            <li class="text-sm text-gray-700 border-b border-gray-100 pb-2">{{ producto.nombre }}</li>
-          }
-        </ul>
-      }
+      class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 min-h-0">
+      <app-carrito />
     </aside>
   </main>
 </div>
