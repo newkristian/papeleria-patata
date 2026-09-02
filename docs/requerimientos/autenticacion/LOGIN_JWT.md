@@ -23,7 +23,7 @@ Autenticar empleados y entregar tokens firmados para consumir la API protegida.
   del usuario autenticado. Hoy el frontend no tiene forma de saber quién inició sesión
   ni su rol sin decodificar el token de forma no soportada. No bloquea ninguna
   sub-tarea de `docs/requerimientos/pos/` conocida hasta ahora (detectado durante la
-  Tarea 7 de `TAREAS_VENTAS.md`; ver `docs/trabajo-actual/TAREAS_POS.md`), pero limita
+  Tarea 7 de `TAREAS_VENTAS.md`; ver `docs/trabajo-completado/TAREAS_POS.md`), pero limita
   cualquier UI futura que necesite mostrar "Cajero: <nombre>" o condicionar algo al rol
   del usuario en sesión sin hacer una llamada adicional. Antes de implementarlo, decidir
   entre: (a) agregar `nombre`/`rol`/`tiendaId`/`tiendaNombre` a `AuthResponse`, o (b) un

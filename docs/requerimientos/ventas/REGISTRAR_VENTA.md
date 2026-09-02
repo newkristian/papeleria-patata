@@ -47,7 +47,7 @@ promociones, descuentos autorizados y afectación de inventario.
   `GET /ventas/cliente/{clienteId}` filtran por la tienda del usuario autenticado
   para `VENDEDOR` (`ADMINISTRADOR` ve todas). Una venta de otra tienda responde 404,
   no 403, para no confirmar que el ID existe en otra tienda.
-- Interfaz de usuario completa en el POS (Tarea 7 / `docs/trabajo-actual/TAREAS_POS.md`):
+- Interfaz de usuario completa en el POS (Tarea 7 / `docs/trabajo-completado/TAREAS_POS.md`):
   buscador, carrito, cobro con presentación de promociones por línea, botón de
   descuento manual y modal de reautenticación.
 
