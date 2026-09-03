@@ -78,6 +78,29 @@ Centralizar el acceso HTTP en servicios responsables de comunicación con API.
 
 Los componentes no deberán construir URLs ni conocer detalles de endpoints.
 
+La URL base de la API y los flags dependientes del ambiente deberán centralizarse
+en la configuración de Angular. Los servicios conocerán únicamente la ruta de su
+recurso y no deberán repetir hosts o puertos.
+
+Cuando frontend y backend se publiquen bajo el mismo origen, preferir una ruta
+relativa atendida por el reverse proxy. Una URL absoluta requiere una configuración
+CORS explícita para el origen real.
+
+Verificar en el build de producción que no permanezcan referencias accidentales a
+`localhost`, puertos locales ni endpoints de desarrollo.
+
+La configuración de Angular forma parte del bundle público. Nunca colocar en
+`environment.ts`, archivos de configuración en runtime ni constantes TypeScript:
+
+- contraseñas;
+- secretos JWT;
+- tokens administrativos;
+- claves privadas o credenciales de servicios.
+
+Utilizar configuración en runtime únicamente cuando exista la necesidad concreta de
+promover una misma imagen entre ambientes sin recompilarla. No agregar ese mecanismo
+por anticipado.
+
 ---
 
 # Tailwind CSS

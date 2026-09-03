@@ -92,6 +92,18 @@ Evitar múltiples `@Value` cuando representan una misma configuración.
 
 Los secretos nunca deberán escribirse directamente en código.
 
+Separar la configuración común de la específica de desarrollo y producción mediante
+perfiles cuando aporte claridad. Las diferencias de infraestructura no deberán
+introducir condicionales dentro de la lógica de negocio.
+
+En producción, las credenciales de base de datos, secretos JWT y demás valores
+sensibles deberán ser obligatorios y fallar durante el arranque si no existen. No
+proporcionarles valores de respaldo conocidos o inseguros.
+
+Los valores por defecto solo son apropiados para configuración no sensible o para un
+perfil local claramente identificado. El perfil productivo deberá activarse de forma
+explícita y no heredar silenciosamente configuración de desarrollo.
+
 ---
 
 # Transacciones

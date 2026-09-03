@@ -109,6 +109,21 @@ Nunca almacenar en el repositorio:
 
 Utilizar variables de entorno o mecanismos equivalentes.
 
+En producción, la ausencia de un secreto o credencial obligatoria deberá impedir el
+arranque. Nunca utilizar un secreto de demostración como valor de respaldo.
+
+Todo valor incluido en el bundle Angular es público, incluso si proviene de un
+archivo `environment`. Solo deben colocarse allí URLs, flags y claves expresamente
+públicas.
+
+Eliminar un secreto del estado actual del repositorio no lo elimina del historial.
+Si un secreto fue versionado, deberá rotarse inmediatamente y después evaluarse la
+limpieza del historial con autorización del propietario.
+
+La exposición de Swagger UI y de la especificación OpenAPI deberá definirse por
+ambiente. En producción deberán deshabilitarse o protegerse, salvo que publicar la
+documentación sea una decisión explícita del producto.
+
 ---
 
 # Logs

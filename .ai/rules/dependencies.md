@@ -29,6 +29,10 @@ No actualizar versiones mayores como parte de una tarea no relacionada.
 
 Las actualizaciones por vulnerabilidades de seguridad tienen prioridad.
 
+Mantener y respetar los archivos de bloqueo y wrappers del repositorio para obtener
+instalaciones reproducibles. No sustituir `npm ci` por una instalación que modifique
+el lockfile dentro de CI o de un build Docker.
+
 ---
 
 # Backend

@@ -106,3 +106,25 @@ No agregar paginación a recursos pequeños únicamente por convención.
 Evitar romper contratos existentes innecesariamente.
 
 Los cambios incompatibles deberán identificarse antes de implementarse.
+
+---
+
+# OpenAPI
+
+La especificación OpenAPI generada deberá representar el contrato HTTP vigente.
+Cuando cambien rutas, DTOs, validaciones, autenticación o respuestas relevantes,
+deberá revisarse también su documentación.
+
+Documentar como mínimo cuando no puedan inferirse correctamente:
+
+- propósito de la operación;
+- esquemas Request y Response;
+- autenticación Bearer;
+- códigos de éxito y errores de negocio relevantes;
+- restricciones que el tipo por sí solo no comunique.
+
+Los esquemas públicos deberán usar DTOs y nunca entidades JPA.
+
+Swagger UI facilita la exploración manual, pero no sustituye la autorización real ni
+las pruebas automatizadas. Su exposición deberá decidirse explícitamente por
+ambiente; no hacer públicas sus rutas en producción por simple conveniencia.

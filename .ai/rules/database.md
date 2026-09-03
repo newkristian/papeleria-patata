@@ -20,6 +20,10 @@ Una migración aplicada no deberá modificarse posteriormente.
 
 Crear una nueva migración para realizar correcciones.
 
+En producción, Hibernate deberá usar `ddl-auto=validate` o `none`. Nunca utilizar
+`create`, `create-drop` o `update` como mecanismo de evolución del esquema
+productivo; Flyway es la única fuente de cambios estructurales.
+
 ---
 
 # JPA

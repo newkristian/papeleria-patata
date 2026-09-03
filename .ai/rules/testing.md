@@ -77,6 +77,19 @@ suficiente.
 Utilizar `@SpringBootTest` cuando realmente sea necesario probar integración
 con el contexto completo.
 
+Para cambios de configuración o despliegue, añadir verificaciones proporcionales al
+riesgo, por ejemplo:
+
+- arranque del stack desde configuración de ejemplo;
+- healthchecks y conexión real entre servicios;
+- persistencia después de reiniciar contenedores;
+- recarga directa de una ruta profunda de la SPA;
+- ausencia de URLs locales y secretos en el bundle productivo.
+
+Antes de una entrega o publicación importante, realizar una prueba de arranque desde
+un checkout limpio. No convertir esta prueba costosa en requisito para cada cambio de
+código si una verificación más pequeña es suficiente.
+
 ---
 
 # Reglas
