@@ -43,17 +43,24 @@ romper productos ni referencias históricas.
 
 ## Implementación verificada
 
-- Existen Controller, Service, Repository, Mapper y DTOs para CRUD básico.
+- La migración V13 crea exactamente una identidad de sistema `PENDIENTE`, agrega el
+  estado activo y protege en PostgreSQL su modificación, eliminación y uso en pagos.
+- Controller, Service, Repository, Mapper y DTOs implementan consulta, creación,
+  edición, búsqueda paginada por término/estado y desactivación lógica.
+- La desactivación reasigna primero todos los productos a `PENDIENTE` en la misma
+  transacción. Un fallo posterior revierte también la reasignación.
+- El listado para selección devuelve únicamente proveedores comerciales activos; la
+  búsqueda administrativa incluye el filtro de estado y nunca expone `PENDIENTE` como
+  opción comercial.
+- Bean Validation, errores 400/404/409 y la matriz de autorización se verificaron con
+  pruebas unitarias y solicitudes HTTP reales para los cuatro roles.
 - El porcentaje de comisión utiliza `BigDecimal` y `NUMERIC(5, 2)`, con rango de
   cero a cien protegido en el contrato y en la base de datos.
 
 ## Pendientes conocidos
 
-- Crear mediante Flyway el proveedor reservado y el estado necesario para borrado
-  lógico.
-- Implementar la reasignación transaccional a `PENDIENTE` antes de desactivar.
-- Aplicar Bean Validation, autorización explícita, errores de dominio, paginación y
-  pruebas del CRUD.
+- Hacer que el contrato de productos asigne automáticamente `PENDIENTE` cuando el
+  cliente omita proveedor; corresponde a la Tarea 4 del plan de carga de productos.
 - Implementar la interfaz administrativa.
 
 ## Dependencia no bloqueante

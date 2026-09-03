@@ -11,4 +11,6 @@ public interface PromocionRepository extends JpaRepository<Promocion, Long> {
     List<Promocion> findByProductoId(Long productoId);
 
     List<Promocion> findByCategoriaId(Long categoriaId);
+
+    long countByCategoriaId(Long categoriaId);
 }

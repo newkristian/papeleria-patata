@@ -22,22 +22,23 @@ Administrar las categorías que organizan el catálogo de productos.
 
 - CRUD REST completo con contratos Request/Response.
 - Escritura restringida por roles y consultas optimizadas para evitar N+1.
+- Los campos se normalizan, los nombres duplicados sin distinción de mayúsculas se
+  rechazan con 409 y un recurso inexistente devuelve 404.
+- El borrado comprueba tanto productos como promociones relacionados y responde 409
+  con un mensaje controlado, sin filtrar errores de integridad internos.
+- Pruebas unitarias y de API verifican las relaciones y los permisos; administrador e
+  inventarista pueden crear una categoría y usar su ID inmediatamente para crear un
+  producto.
 
 ## Pendientes no esenciales
 
-- Añadir pruebas unitarias y de API.
+- Definir en el futuro si el catálogo de categorías requiere estado activo y borrado
+  lógico, según la dependencia descrita más abajo.
 
 ## Pendientes para el mantenimiento de productos
 
 - Crear modelos, servicio HTTP y mantenimiento frontend de categorías antes del
   formulario de productos.
-- Manejar de forma consistente nombres duplicados y la eliminación de una categoría
-  relacionada con productos.
-- Considerar también promociones relacionadas por `promociones.categoria_id`; el
-  servicio actual solo cuenta productos antes del borrado y una promoción asociada
-  podría terminar en una violación de clave foránea no controlada.
-- Añadir pruebas de autorización para `ADMINISTRADOR`, `INVENTARISTA` y roles no
-  permitidos.
 
 ## Dependencia no bloqueante
 

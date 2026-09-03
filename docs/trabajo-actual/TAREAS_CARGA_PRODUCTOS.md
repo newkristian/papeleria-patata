@@ -1,6 +1,6 @@
 # Plan de trabajo — Carga de productos, inventario y proveedores
 
-**Estado del plan:** En desarrollo — Tareas 1 y 2 completadas
+**Estado del plan:** En desarrollo — Tareas 1, 2 y 3 completadas
 **Última actualización:** 2 de septiembre de 2026
 
 ## Propósito
@@ -249,7 +249,27 @@ Separar fallos reales de la funcionalidad de problemas preexistentes del entorno
 
 ## Tarea 3 — Catálogos obligatorios: categorías y proveedor reservado
 
-**Estado:** Pendiente
+**Estado:** Completada (2 de septiembre de 2026)
+
+Se agregó la migración V13 con estado activo de proveedores, una identidad de sistema
+única para `PENDIENTE` y protecciones de base de datos contra su modificación,
+eliminación o uso en pagos. El backend resuelve esa identidad sin depender de un ID,
+excluye el registro reservado de los selectores y búsquedas comerciales, valida y
+pagina el mantenimiento de proveedores y aplica la matriz de roles aprobada.
+
+La desactivación es lógica y reasigna en bloque todos los productos a `PENDIENTE`
+dentro de la misma transacción. Las categorías normalizan y controlan nombres
+duplicados y rechazan con 409 el borrado cuando existen productos o promociones
+relacionados. Los errores de ausencia, validación, autorización e integridad ya no
+exponen excepciones genéricas.
+
+Verificación realizada: 85 pruebas unitarias sin Docker y suite completa de 97 pruebas
+con PostgreSQL 16.2 mediante Testcontainers. Las 13 migraciones se aplicaron desde un
+esquema limpio; V13 operó sobre proveedores y productos sembrados por migraciones
+anteriores y una segunda ejecución de Flyway confirmó que no se duplica `PENDIENTE`.
+La integración validó 403 por rol, protección de identidad y pagos, búsqueda/listado,
+validaciones, reasignación, rollback y los recorridos administrador e inventarista
+para crear categoría y usarla inmediatamente en un producto con cantidad desconocida.
 
 ### Objetivo
 

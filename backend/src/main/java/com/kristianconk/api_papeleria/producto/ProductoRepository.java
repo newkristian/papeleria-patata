@@ -5,6 +5,7 @@ import com.kristianconk.api_papeleria.proveedor.Proveedor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -67,6 +68,12 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     @Query("SELECT COUNT(p) FROM Producto p WHERE p.proveedor.id = :proveedorId")
     long countByProveedorId(@Param("proveedorId") Long proveedorId);
+
+    @Modifying
+    @Query("UPDATE Producto p SET p.proveedor = :proveedorPendiente WHERE p.proveedor.id = :proveedorId")
+    int reasignarProveedor(
+            @Param("proveedorId") Long proveedorId,
+            @Param("proveedorPendiente") Proveedor proveedorPendiente);
 
     @Query("SELECT COUNT(p) FROM Producto p WHERE p.categoria.id = :categoriaId")
     long countByCategoriaId(@Param("categoriaId") final Long categoriaId);

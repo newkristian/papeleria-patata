@@ -9,6 +9,8 @@ public record ProveedorResponseDTO(
         String telefono,
         String email,
         String contacto,
-        BigDecimal porcentajeComision
+        BigDecimal porcentajeComision,
+        boolean activo,
+        boolean sistema
 ) {
 }

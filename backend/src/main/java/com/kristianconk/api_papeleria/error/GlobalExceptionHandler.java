@@ -64,6 +64,31 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> manejarConflicto(final ConflictException e) {
+        log.error("[POS/GlobalExceptionHandler] - MANEJAR_CONFLICTO: errorMessage: {}", e.getMessage());
+        final ErrorResponse error = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                "Conflicto",
+                e.getMessage(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> manejarIntegridadDeDatos(
+            final org.springframework.dao.DataIntegrityViolationException e) {
+        log.error("[POS/GlobalExceptionHandler] - MANEJAR_INTEGRIDAD_DATOS: {}", e.getMostSpecificCause().getMessage());
+        final ErrorResponse error = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                "Conflicto de integridad",
+                "La operación entra en conflicto con información existente",
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> manejarValidacion(final org.springframework.web.bind.MethodArgumentNotValidException e) {
         final String mensaje = e.getBindingResult().getFieldErrors().stream()
@@ -140,4 +165,3 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
-

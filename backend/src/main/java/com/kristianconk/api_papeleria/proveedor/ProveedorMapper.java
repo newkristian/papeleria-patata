@@ -14,7 +14,9 @@ public class ProveedorMapper {
                 proveedor.getTelefono(),
                 proveedor.getEmail(),
                 proveedor.getContacto(),
-                proveedor.getPorcentajeComision()
+                proveedor.getPorcentajeComision(),
+                proveedor.isActivo(),
+                proveedor.isSistema()
         );
     }
     
@@ -27,6 +29,8 @@ public class ProveedorMapper {
         proveedor.setEmail(request.email());
         proveedor.setContacto(request.contacto());
         proveedor.setPorcentajeComision(request.porcentajeComision());
+        proveedor.setActivo(true);
+        proveedor.setSistema(false);
         return proveedor;
     }
     

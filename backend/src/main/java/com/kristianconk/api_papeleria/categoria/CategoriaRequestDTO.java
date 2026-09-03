@@ -11,4 +11,8 @@ public record CategoriaRequestDTO(
         @Size(max = 500, message = "La descripción no puede exceder 500 caracteres")
         String descripcion
 ) {
+    public CategoriaRequestDTO {
+        nombre = nombre == null ? null : nombre.trim();
+        descripcion = descripcion == null || descripcion.isBlank() ? null : descripcion.trim();
+    }
 }
