@@ -48,3 +48,11 @@ Registrar entradas y salidas manuales y consultar la bitácora histórica con fi
 - Una operación inválida no modifica ni el producto ni la bitácora.
 - Una operación válida actualiza producto y movimiento atómicamente.
 - La consulta paginada permite auditar quién, cuándo, por qué y cómo cambió el stock.
+
+## Evolución futura
+
+- El catálogo seguirá siendo global, pero las existencias y movimientos pertenecerán
+  a cada tienda y se permitirán transferencias entre ellas. El alcance y las
+  decisiones pendientes se encuentran en `STOCK_POR_TIENDA.md`.
+- Hasta implementar esa evolución, todas las tiendas utilizarán temporalmente la misma
+  existencia global almacenada en `Producto`.

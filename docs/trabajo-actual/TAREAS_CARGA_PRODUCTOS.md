@@ -1,6 +1,6 @@
 # Plan de trabajo — Carga de productos, inventario y proveedores
 
-**Estado del plan:** En desarrollo — Tarea 1 completada  
+**Estado del plan:** En desarrollo — Tareas 1 y 2 completadas
 **Última actualización:** 2 de septiembre de 2026
 
 ## Propósito
@@ -138,6 +138,31 @@ Toda autorización real se aplicará en backend mediante `@PreAuthorize` y valid
 de servicio cuando exista una regla de negocio adicional. Los guards y botones del
 frontend solo reflejarán los permisos y no serán una frontera de seguridad.
 
+## Mapa de relaciones de producto verificado
+
+| Relación persistente | Nulabilidad | Momento | Impacto en el alta |
+|---|---|---|---|
+| `productos.categoria_id -> categorias.id` | `NOT NULL` | Alta/edición | Bloqueante: categoría existente |
+| `productos.proveedor_id -> proveedores.id` | `NOT NULL` | Alta/edición | Bloqueante: proveedor real o `PENDIENTE` |
+| `producto_fotos.producto_id -> productos.id` | `NOT NULL`, `ON DELETE CASCADE` | Posterior | Opcional; el producto puede nacer sin foto |
+| `inventario_movimientos.producto_id -> productos.id` | `NOT NULL` | Posterior | No bloquea alta con cantidad desconocida |
+| `detalles_venta.producto_id -> productos.id` | `NOT NULL` | Venta | No bloquea el alta; obliga a borrado lógico |
+| `promociones.producto_id -> productos.id` | Nullable y excluyente con categoría | Posterior | Opcional; obliga a conservar referencias |
+| `autorizaciones_descuento.producto_id -> productos.id` | `NOT NULL` | Venta autorizada | Opcional para el catálogo; conserva auditoría |
+
+Dependencias funcionales adicionales del flujo:
+
+- El usuario debe autenticarse como `ADMINISTRADOR` o `INVENTARISTA` y el frontend
+  debe conocer su rol para habilitar el área administrativa.
+- `costoCompra`, porcentaje de ganancia, unidad de medida y stock mínimo son campos de
+  negocio obligatorios o con valores por defecto, pero no relaciones de tablas.
+- La fotografía y el primer conteo ocurren después de persistir el producto; no deben
+  hacer atómica una única solicitud grande de alta.
+- El catálogo definitivo es global y el inventario futuro será por tienda, con
+  transferencias. Dentro de este plan se conserva temporalmente el stock global
+  compartido del modelo vigente; la evolución está documentada en
+  `docs/requerimientos/inventario/STOCK_POR_TIENDA.md`.
+
 ---
 
 ## Tarea 1 — Actualizar requerimientos funcionales
@@ -150,6 +175,17 @@ aceptación. Se documentaron además dos dependencias no bloqueantes: la semánt
 los reportes históricos después de reasignar productos a `PENDIENTE` y la recuperación
 de trabajos de imagen interrumpidos por un reinicio del backend. Ninguna de las dos
 impide comenzar el backend del mantenimiento.
+
+Revisión adicional del 2 de septiembre de 2026: se inspeccionaron todas las claves
+foráneas y asociaciones de producto. Se incorporó `Categoria` como dependencia
+bloqueante del flujo de alta y se añadió su mantenimiento frontend al plan. También se
+documentaron como decisiones no bloqueantes el ciclo de vida de categorías y si el
+catálogo/inventario global vigente debe evolucionar a inventario por tienda.
+
+Decisión posterior: el catálogo será global y el stock será por tienda, incluyendo
+transferencias. La implementación quedó explícitamente diferida; este plan mantiene
+el stock global compartido como supuesto transitorio y registra la evolución en
+`docs/requerimientos/inventario/STOCK_POR_TIENDA.md`.
 
 ### Objetivo
 
@@ -174,7 +210,19 @@ código.
 
 ## Tarea 2 — Estabilizar la verificación inicial
 
-**Estado:** Pendiente
+**Estado:** Completada (2 de septiembre de 2026)
+
+Se corrigió la prueba raíz de Angular para verificar el `router-outlet` existente y
+se configuró Maven Surefire para cargar Mockito 5.20 como `javaagent`, eliminando la
+dependencia del self-attach. Se comprobó que el deadlock de esbuild pertenece al
+sandbox: limitarlo a un worker no lo corrige, mientras el mismo build de producción
+termina correctamente fuera del aislamiento; no fue necesario cambiar dependencias.
+
+Verificación realizada: 72 pruebas unitarias backend sin Docker, suite backend
+completa con 78 pruebas y PostgreSQL 16.2 mediante Testcontainers, 12 migraciones
+Flyway aplicadas desde cero, 26 pruebas frontend y build Angular de producción. La
+suite que usa Testcontainers y el build Angular requieren ejecución autorizada fuera
+del sandbox en este entorno.
 
 ### Objetivo
 
@@ -199,19 +247,25 @@ Separar fallos reales de la funcionalidad de problemas preexistentes del entorno
 
 ---
 
-## Tarea 3 — Proveedor reservado y borrado lógico de proveedores
+## Tarea 3 — Catálogos obligatorios: categorías y proveedor reservado
 
 **Estado:** Pendiente
 
 ### Objetivo
 
-Permitir productos cuyo proveedor comercial todavía no se conoce sin debilitar la
-integridad referencial.
+Dejar completos los dos catálogos obligatorios para crear un producto: categoría y
+proveedor, permitiendo además que el proveedor comercial todavía no se conozca sin
+debilitar la integridad referencial.
 
 ### Alcance
 
 - Crear una migración Flyway nueva que agregue el estado activo requerido por el
   borrado lógico y cree de forma idempotente el proveedor `PENDIENTE`.
+- Verificar el CRUD backend existente de categorías, sus validaciones, errores y
+  permisos para `ADMINISTRADOR` e `INVENTARISTA`.
+- Mantener disponible un listado de categorías apto para el selector de productos.
+- Controlar nombres de categoría duplicados y el intento de eliminar una categoría
+  relacionada, sin exponer errores internos.
 - Proteger la unicidad de la identidad reservada sin depender de un ID fijo.
 - Crear un componente de dominio/aplicación único para resolver el proveedor
   reservado; no duplicar búsquedas por nombre en distintos servicios.
@@ -232,6 +286,8 @@ integridad referencial.
   relación.
 - Un error durante la reasignación revierte toda la operación.
 - Roles no permitidos reciben 403.
+- Un administrador o inventarista puede crear una categoría y usar inmediatamente su
+  ID válido para crear un producto mediante la API.
 
 ---
 
@@ -397,17 +453,22 @@ Crear el contenedor frontend para productos, proveedores e inventario.
 
 ---
 
-## Tarea 9 — Interfaz de proveedores
+## Tarea 9 — Interfaces de categorías y proveedores
 
 **Estado:** Pendiente
 
 ### Objetivo
 
-Administrar proveedores y representar claramente el estado pendiente.
+Administrar las dos relaciones obligatorias del producto y representar claramente el
+estado de proveedor pendiente.
 
 ### Alcance
 
 - Crear modelos y servicio HTTP basados en contratos backend verificados.
+- Implementar listado, alta y edición de categorías para `ADMINISTRADOR` e
+  `INVENTARISTA`.
+- Permitir volver al formulario de producto y seleccionar inmediatamente una
+  categoría recién creada.
 - Implementar listado paginado, búsqueda y filtro activo/inactivo.
 - Implementar alta, edición y desactivación según permisos.
 - Mostrar el número de productos que serán reasignados antes de desactivar cuando el
@@ -419,6 +480,8 @@ Administrar proveedores y representar claramente el estado pendiente.
 ### Verificación mínima
 
 - Flujo completo contra backend real.
+- Un administrador o inventarista puede crear y seleccionar una categoría sin usar
+  herramientas externas.
 - Desactivación actualiza la lista y los productos quedan pendientes.
 - Un rol de solo lectura no puede ejecutar escrituras aunque manipule la UI.
 
@@ -449,6 +512,7 @@ Permitir dar de alta, localizar y editar productos sin detener la tienda.
 ### Verificación mínima
 
 - Alta con proveedor, sin proveedor y con cantidad desconocida.
+- Alta usando una categoría creada desde la misma área administrativa.
 - Edición de proveedor, costo, margen, categoría, stock mínimo y estado.
 - Productos inactivos no aparecen en el buscador POS.
 - El frontend no inventa campos ni reglas ausentes del backend.
@@ -510,6 +574,9 @@ Verificar el flujo completo y sincronizar documentación con el comportamiento r
   cantidad desconocida → contar → vender con control de stock → editar → desactivar.
 - Flujo real alterno: crear producto sin proveedor → asignación a `PENDIENTE` → asignar
   proveedor → desactivar proveedor → reasignación automática a `PENDIENTE`.
+- Flujo por rol: iniciar sesión como `ADMINISTRADOR` y como `INVENTARISTA` → crear o
+  seleccionar categoría → crear producto con proveedor o `PENDIENTE` → consultar el
+  producto recién creado en el catálogo administrativo.
 - Backend y frontend compilan y sus pruebas aprobadas pasan.
 - No quedan TODO esenciales ni contratos temporales.
 
@@ -520,7 +587,7 @@ T1 Documentación
       ↓
 T2 Estado base verificable
       ↓
-T3 Proveedor reservado y borrado lógico
+T3 Categorías y proveedor reservado
       ↓
 T4 Backend de productos
       ↓
@@ -532,7 +599,7 @@ T7 Sesión y permisos frontend
       ↓
 T8 Área administrativa
       ↓
-T9 Proveedores frontend
+T9 Categorías y proveedores frontend
       ↓
 T10 Productos frontend
       ↓
@@ -550,8 +617,10 @@ implementados, verificados, revisados y guardados por el propietario.
 - `docs/requerimientos/productos/BUSQUEDA_PRODUCTOS.md`
 - `docs/requerimientos/productos/AJUSTE_STOCK_MINIMO.md`
 - `docs/requerimientos/productos/GESTION_FOTOS_PRODUCTO.md`
+- `docs/requerimientos/categorias/CRUD_CATEGORIAS.md`
 - `docs/requerimientos/inventario/CANTIDAD_DESCONOCIDA.md`
 - `docs/requerimientos/inventario/MOVIMIENTO_INVENTARIO.md`
+- `docs/requerimientos/inventario/STOCK_POR_TIENDA.md`
 - `docs/requerimientos/proveedores/CRUD_PROVEEDORES.md`
 - `docs/requerimientos/proveedores/REPORTE_COMISIONES_PROVEEDOR.md`
 - `docs/requerimientos/seguridad/PROTECCION_XSS.md`

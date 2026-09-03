@@ -65,6 +65,35 @@ proveedor, costos, precio y estado de inventario, sin eliminar su historial.
 - Aplicar autorización por operación y evitar exposición de costos a `VENDEDOR`.
 - Añadir interfaz administrativa y cobertura de pruebas.
 
+## Dependencias de datos verificadas
+
+### Relaciones obligatorias para crear el producto
+
+- `Categoria`: obligatoria en contrato, JPA y PostgreSQL. Su CRUD backend existe y el
+  mantenimiento frontend debe estar listo antes del formulario de productos.
+- `Proveedor`: obligatorio en JPA y PostgreSQL. El backend asignará el registro
+  reservado `PENDIENTE` cuando el usuario no seleccione uno.
+
+### Relaciones posteriores que no bloquean el alta
+
+- `ProductoFoto`: cada foto requiere un producto ya persistido, pero un producto puede
+  crearse sin fotos.
+- `InventarioMovimiento`: cada movimiento requiere producto y usuario, pero el alta
+  puede completarse con cantidad desconocida sin crear un movimiento inicial.
+- `DetalleVenta`: se crea al vender y referencia un producto existente; no participa
+  en el alta.
+- `Promocion` y `AutorizacionDescuento`: pueden referenciar el producto después de su
+  creación; son opcionales para el catálogo.
+
+## Dependencia futura no bloqueante
+
+- El catálogo será global, pero cada tienda deberá tener existencias independientes y
+  transferencias entre tiendas. Este requerimiento quedó diferido y se documenta en
+  `../inventario/STOCK_POR_TIENDA.md`.
+- Durante el alcance actual se conservará el modelo existente: todas las tiendas
+  acceden temporalmente al mismo `stockActual`. Esta simplificación es consciente y no
+  debe presentarse como el modelo definitivo.
+
 ## Criterios de aceptación
 
 - El catálogo puede administrarse sin exponer entidades JPA como contrato HTTP.
@@ -74,3 +103,6 @@ proveedor, costos, precio y estado de inventario, sin eliminar su historial.
   productos mediante una solicitud HTTP directa.
 - Un código duplicado, una relación inexistente o un valor fuera de rango produce una
   respuesta HTTP consistente sin exponer detalles internos.
+- Un `ADMINISTRADOR` o `INVENTARISTA` puede iniciar sesión, crear o seleccionar una
+  categoría, omitir el proveedor cuando aún no se conoce y completar el alta sin
+  manipular la base de datos ni llamar manualmente a la API.
