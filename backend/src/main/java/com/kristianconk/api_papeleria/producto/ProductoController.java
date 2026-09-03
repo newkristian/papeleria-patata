@@ -19,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,27 +36,48 @@ public class ProductoController {
     private final ProductoFotoService fotoService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA')")
     @Operation(summary = "Crear nuevo producto")
     public ResponseEntity<ProductoDetalleDTO> crearProducto(
-            @Valid @RequestBody ProductoRequestDTO request,
+            @Valid @RequestBody ProductoCrearRequestDTO request,
             @AuthenticationPrincipal Usuario usuario) {
         ProductoDetalleDTO producto = productoService.crearProducto(request, usuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(producto);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA')")
     @Operation(summary = "Actualizar producto existente")
     public ResponseEntity<ProductoDetalleDTO> actualizarProducto(
             @PathVariable Long id,
-            @Valid @RequestBody ProductoRequestDTO request,
+            @Valid @RequestBody ProductoActualizarRequestDTO request,
             @AuthenticationPrincipal Usuario usuario) {
         ProductoDetalleDTO producto = productoService.actualizarProducto(id, request, usuario);
         return ResponseEntity.ok(producto);
     }
 
+    @PatchMapping("/{id}/desactivar")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE')")
+    @Operation(summary = "Desactivar un producto sin eliminar su historial")
+    public ResponseEntity<ProductoDetalleDTO> desactivarProducto(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Usuario usuario) {
+        return ResponseEntity.ok(productoService.desactivarProducto(id, usuario));
+    }
+
+    @PatchMapping("/{id}/reactivar")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE')")
+    @Operation(summary = "Reactivar un producto")
+    public ResponseEntity<ProductoDetalleDTO> reactivarProducto(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Usuario usuario) {
+        return ResponseEntity.ok(productoService.reactivarProducto(id, usuario));
+    }
+
     // GET /api/productos/buscar?soloStockBajo=true&page=0&size=20
     // GET /api/productos/buscar?termino=cuaderno&categoriaId=5&page=0&size=10&sort=nombre,asc
     @GetMapping("/buscar")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA', 'VENDEDOR')")
     @Operation(summary = "Búsqueda avanzada de productos con paginación")
     public ResponseEntity<Page<ProductoListadoDTO>> buscarProductos(
             @Parameter(description = "Término de búsqueda (nombre, descripción o código)")
@@ -79,25 +101,28 @@ public class ProductoController {
             @Parameter(description = "Solo productos con stock bajo")
             @RequestParam(required = false) Boolean soloStockBajo,
 
-            @PageableDefault(size = 20, sort = "nombre", direction = Sort.Direction.ASC) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "nombre", direction = Sort.Direction.ASC) Pageable pageable,
+            @AuthenticationPrincipal Usuario usuario) {
 
         ProductoBusquedaDTO busqueda = new ProductoBusquedaDTO(
                 termino, categoriaId, proveedorId, activo, precioMin, precioMax, soloStockBajo);
 
-        Page<ProductoListadoDTO> productos = productoService.buscarProductos(busqueda, pageable);
+        Page<ProductoListadoDTO> productos = productoService.buscarProductos(busqueda, pageable, usuario);
         return ResponseEntity.ok(productos);
     }
 
     // GET /api/productos/codigo/7501234567890
     @GetMapping("/codigo/{codigoBarras}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA', 'VENDEDOR')")
     @Operation(summary = "Buscar producto por código de barras (resultado único)")
-    public ResponseEntity<ProductoDetalleDTO> buscarPorCodigoBarras(
+    public ResponseEntity<ProductoListadoDTO> buscarPorCodigoBarras(
             @PathVariable String codigoBarras) {
-        ProductoDetalleDTO producto = productoService.buscarPorCodigoBarras(codigoBarras);
+        ProductoListadoDTO producto = productoService.buscarActivoPorCodigoBarras(codigoBarras);
         return ResponseEntity.ok(producto);
     }
 
     @GetMapping("/categoria/{categoriaId}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA', 'VENDEDOR')")
     @Operation(summary = "Listar productos por categoría (paginado)")
     public ResponseEntity<Page<ProductoListadoDTO>> buscarPorCategoria(
             @PathVariable Long categoriaId,
@@ -108,6 +133,7 @@ public class ProductoController {
 
     // GET /api/productos/proveedor/3?termino=marca&page=0&size=15
     @GetMapping("/proveedor/{proveedorId}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA', 'VENDEDOR')")
     @Operation(summary = "Listar productos por proveedor (paginado)")
     public ResponseEntity<Page<ProductoListadoDTO>> buscarPorProveedor(
             @PathVariable Long proveedorId,
@@ -118,6 +144,7 @@ public class ProductoController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA')")
     @Operation(summary = "Obtener detalle de producto por ID")
     public ResponseEntity<ProductoDetalleDTO> obtenerProducto(@PathVariable Long id) {
         ProductoDetalleDTO producto = productoService.buscarPorId(id);
@@ -125,6 +152,7 @@ public class ProductoController {
     }
 
     @PostMapping("/ajustar-inventario")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA')")
     @Operation(summary = "Ajustar inventario de producto")
     public ResponseEntity<ProductoDetalleDTO> ajustarInventario(
             @Valid @RequestBody AjusteInventarioDTO ajuste,
@@ -134,11 +162,14 @@ public class ProductoController {
     }
 
     @GetMapping("/stock-bajo")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA')")
     @Operation(summary = "Listar productos con stock bajo (paginado)")
     public ResponseEntity<Page<ProductoListadoDTO>> productosStockBajo(
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20) Pageable pageable,
+            @AuthenticationPrincipal Usuario usuario) {
         ProductoBusquedaDTO busqueda = new ProductoBusquedaDTO(null, null, null, true, null, null, true);
-        Page<ProductoListadoDTO> productos = productoService.buscarProductos(busqueda, pageable);
+        Page<ProductoListadoDTO> productos = productoService.buscarProductos(
+                busqueda, pageable, usuario);
         return ResponseEntity.ok(productos);
     }
 

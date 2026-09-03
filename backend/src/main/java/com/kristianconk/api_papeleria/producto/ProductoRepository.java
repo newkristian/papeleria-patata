@@ -16,55 +16,36 @@ import java.util.Optional;
 
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
-    // Búsqueda por código de barras (único)
-    Optional<Producto> findByCodigoBarras(String codigoBarras);
+    boolean existsByCodigoBarrasIgnoreCase(String codigoBarras);
 
-    // Búsqueda por categoría con paginación
-    Page<Producto> findByCategoria(Categoria categoria, Pageable pageable);
+    boolean existsByCodigoBarrasIgnoreCaseAndIdNot(String codigoBarras, Long id);
 
-    // Búsqueda por proveedor con paginación
-    Page<Producto> findByProveedor(Proveedor proveedor, Pageable pageable);
+    Page<Producto> findByCategoriaAndActivoTrue(Categoria categoria, Pageable pageable);
 
-    // Búsqueda por nombre exacto (para autocompletado)
-    Page<Producto> findByNombreContainingIgnoreCase(String nombre, Pageable pageable);
+    Page<Producto> findByProveedorAndActivoTrue(Proveedor proveedor, Pageable pageable);
 
     // Búsqueda avanzada con múltiples criterios
     @Query("SELECT p FROM Producto p WHERE " +
             "(:termino IS NULL OR :termino = '' OR " +
             "LOWER(p.nombre) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
-            "LOWER(p.descripcion) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
+            "LOWER(COALESCE(p.descripcion, '')) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
             "LOWER(p.codigoBarras) LIKE LOWER(CONCAT('%', :termino, '%'))) AND " +
             "(:categoriaId IS NULL OR p.categoria.id = :categoriaId) AND " +
             "(:proveedorId IS NULL OR p.proveedor.id = :proveedorId) AND " +
-            "(:activo IS NULL OR p.activo = :activo)")
+            "(:activo IS NULL OR p.activo = :activo) AND " +
+            "(:precioMin IS NULL OR p.precioVenta >= :precioMin) AND " +
+            "(:precioMax IS NULL OR p.precioVenta <= :precioMax) AND " +
+            "(:soloStockBajo = FALSE OR (p.cantidadDesconocida = FALSE AND p.stockActual <= p.stockMinimo))")
     Page<Producto> buscarProductos(
             @Param("termino") String termino,
             @Param("categoriaId") Long categoriaId,
             @Param("proveedorId") Long proveedorId,
             @Param("activo") Boolean activo,
-            Pageable pageable);
-
-    // Búsqueda por rango de precios
-    @Query("SELECT p FROM Producto p WHERE " +
-            "p.precioVenta BETWEEN :precioMin AND :precioMax")
-    Page<Producto> findByRangoPrecio(
             @Param("precioMin") BigDecimal precioMin,
             @Param("precioMax") BigDecimal precioMax,
+            @Param("soloStockBajo") boolean soloStockBajo,
             Pageable pageable);
 
-    // Productos con stock bajo
-    @Query("SELECT p FROM Producto p WHERE p.stockActual <= p.stockMinimo")
-    Page<Producto> findProductosStockBajo(Pageable pageable);
-
-    // Productos por proveedor con filtro adicional
-    @Query("SELECT p FROM Producto p WHERE p.proveedor.id = :proveedorId " +
-            "AND (:termino IS NULL OR :termino = '' OR " +
-            "LOWER(p.nombre) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
-            "LOWER(p.codigoBarras) LIKE LOWER(CONCAT('%', :termino, '%')))")
-    Page<Producto> buscarProductosPorProveedor(
-            @Param("proveedorId") Long proveedorId,
-            @Param("termino") String termino,
-            Pageable pageable);
 
     @Query("SELECT COUNT(p) FROM Producto p WHERE p.proveedor.id = :proveedorId")
     long countByProveedorId(@Param("proveedorId") Long proveedorId);
@@ -95,6 +76,6 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     @Query("SELECT DISTINCT p FROM Producto p " +
             "LEFT JOIN FETCH p.fotos " +
-            "WHERE p.codigoBarras = :codigoBarras")
-    Optional<Producto> findByCodigoBarrasWithFotos(@Param("codigoBarras") String codigoBarras);
+            "WHERE LOWER(p.codigoBarras) = LOWER(:codigoBarras) AND p.activo = TRUE")
+    Optional<Producto> findByCodigoBarrasActivoWithFotos(@Param("codigoBarras") String codigoBarras);
 }

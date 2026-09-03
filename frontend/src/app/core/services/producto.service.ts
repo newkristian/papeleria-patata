@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Pagina, ProductoDetalle, ProductoListado } from '../models/producto.model';
+import { Pagina, ProductoListado } from '../models/producto.model';
 
 @Injectable({
   providedIn: 'root',
@@ -22,7 +22,7 @@ export class ProductoService {
   }
 
   /** GET /productos/codigo/{codigoBarras} — resultado único, 404 si no existe. */
-  buscarPorCodigoBarras(codigoBarras: string): Observable<ProductoDetalle> {
-    return this.http.get<ProductoDetalle>(`${this.apiUrl}/codigo/${encodeURIComponent(codigoBarras)}`);
+  buscarPorCodigoBarras(codigoBarras: string): Observable<ProductoListado> {
+    return this.http.get<ProductoListado>(`${this.apiUrl}/codigo/${encodeURIComponent(codigoBarras)}`);
   }
 }

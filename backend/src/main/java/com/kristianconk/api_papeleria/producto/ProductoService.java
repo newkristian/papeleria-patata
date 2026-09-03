@@ -6,6 +6,7 @@ import com.kristianconk.api_papeleria.categoria.CategoriaRepository;
 import com.kristianconk.api_papeleria.enums.RolUsuario;
 import com.kristianconk.api_papeleria.enums.TipoMovimiento;
 import com.kristianconk.api_papeleria.error.AccesoDenegadoException;
+import com.kristianconk.api_papeleria.error.ConflictException;
 import com.kristianconk.api_papeleria.error.ResourceNotFoundException;
 import com.kristianconk.api_papeleria.inventario.AjusteInventarioDTO;
 import com.kristianconk.api_papeleria.inventario.InventarioMovimiento;
@@ -14,6 +15,7 @@ import com.kristianconk.api_papeleria.producto.foto.ProductoFoto;
 import com.kristianconk.api_papeleria.producto.foto.ProductoFotoDTO;
 import com.kristianconk.api_papeleria.proveedor.Proveedor;
 import com.kristianconk.api_papeleria.proveedor.ProveedorDTO;
+import com.kristianconk.api_papeleria.proveedor.ProveedorPendienteService;
 import com.kristianconk.api_papeleria.proveedor.ProveedorRepository;
 import com.kristianconk.api_papeleria.usuario.Usuario;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,7 @@ public class ProductoService {
     private final ProductoRepository productoRepository;
     private final CategoriaRepository categoriaRepository;
     private final ProveedorRepository proveedorRepository;
+    private final ProveedorPendienteService proveedorPendienteService;
     private final InventarioMovimientoRepository inventarioMovimientoRepository;
 
     // Constantes para cálculo de porcentajes
@@ -43,25 +46,16 @@ public class ProductoService {
     private static final BigDecimal COSTO_MEDIO = new BigDecimal("200.00");
 
     @Transactional
-    public ProductoDetalleDTO crearProducto(ProductoRequestDTO request, Usuario usuario) {
-        // Verificar permisos (solo inventarista, gerente o admin)
-        if (usuario.getRol() != RolUsuario.INVENTARISTA &&
-                usuario.getRol() != RolUsuario.GERENTE &&
-                usuario.getRol() != RolUsuario.ADMINISTRADOR) {
-            throw new AccesoDenegadoException("No tiene permisos para crear productos");
+    public ProductoDetalleDTO crearProducto(ProductoCrearRequestDTO request, Usuario usuario) {
+        verificarPermisosEdicion(usuario);
+
+        if (productoRepository.existsByCodigoBarrasIgnoreCase(request.codigoBarras())) {
+            throw new ConflictException("Ya existe un producto con el código de barras: " + request.codigoBarras());
         }
 
-        // Validar que no exista el código de barras
-        if (productoRepository.findByCodigoBarras(request.codigoBarras()).isPresent()) {
-            throw new IllegalArgumentException("Ya existe un producto con ese código de barras");
-        }
-
-        // Obtener categoría y proveedor
-        Categoria categoria = categoriaRepository.findById(request.categoriaId())
+        final Categoria categoria = categoriaRepository.findById(request.categoriaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada"));
-
-        Proveedor proveedor = proveedorRepository.findById(request.proveedorId())
-                .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado"));
+        final Proveedor proveedor = resolverProveedor(request.proveedorId());
 
         // Crear producto
         Producto producto = new Producto();
@@ -74,6 +68,7 @@ public class ProductoService {
         producto.setStockMinimo(request.stockMinimo());
         producto.setUnidadMedida(request.unidadMedida());
         producto.setCantidadDesconocida(request.cantidadDesconocida());
+        producto.setActivo(true);
 
         // Calcular porcentaje de ganancia
         if (request.porcentajeGananciaManual() != null) {
@@ -95,17 +90,19 @@ public class ProductoService {
     }
 
     @Transactional
-    public ProductoDetalleDTO actualizarProducto(Long id, ProductoRequestDTO request, Usuario usuario) {
-        Producto producto = productoRepository.findById(id)
+    public ProductoDetalleDTO actualizarProducto(
+            Long id,
+            ProductoActualizarRequestDTO request,
+            Usuario usuario) {
+        final Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
 
-        // Verificar permisos
-        verificarPermisosModificacion(usuario, producto);
+        verificarPermisosEdicion(usuario);
 
-        // Actualizar campos
         if (!producto.getCodigoBarras().equals(request.codigoBarras())) {
-            if (productoRepository.findByCodigoBarras(request.codigoBarras()).isPresent()) {
-                throw new IllegalArgumentException("Ya existe un producto con ese código de barras");
+            if (productoRepository.existsByCodigoBarrasIgnoreCaseAndIdNot(request.codigoBarras(), id)) {
+                throw new ConflictException(
+                        "Ya existe un producto con el código de barras: " + request.codigoBarras());
             }
             producto.setCodigoBarras(request.codigoBarras());
         }
@@ -113,41 +110,38 @@ public class ProductoService {
         producto.setNombre(request.nombre());
         producto.setDescripcion(request.descripcion());
 
-        if (request.categoriaId() != null) {
-            Categoria categoria = categoriaRepository.findById(request.categoriaId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada"));
-            producto.setCategoria(categoria);
-        }
+        final Categoria categoria = categoriaRepository.findById(request.categoriaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada"));
+        producto.setCategoria(categoria);
+        producto.setProveedor(resolverProveedor(request.proveedorId()));
 
-        if (request.proveedorId() != null) {
-            Proveedor proveedor = proveedorRepository.findById(request.proveedorId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado"));
-            producto.setProveedor(proveedor);
-        }
-
-        // Actualizar costo y recalcular precio si es necesario
-        if (request.costoCompra() != null && !request.costoCompra().equals(producto.getCostoCompra())) {
-            producto.setCostoCompra(request.costoCompra());
-
-            if (request.porcentajeGananciaManual() != null) {
-                if (usuario.getRol() == RolUsuario.INVENTARISTA) {
-                    throw new AccesoDenegadoException("Inventarista no puede fijar porcentaje manualmente");
-                }
-                producto.setPorcentajeGanancia(request.porcentajeGananciaManual());
-            } else {
-                producto.setPorcentajeGanancia(calcularPorcentajeGanancia(request.costoCompra()));
+        producto.setCostoCompra(request.costoCompra());
+        if (request.porcentajeGananciaManual() != null) {
+            if (usuario.getRol() == RolUsuario.INVENTARISTA) {
+                throw new AccesoDenegadoException("Inventarista no puede fijar porcentaje manualmente");
             }
+            producto.setPorcentajeGanancia(request.porcentajeGananciaManual());
+        } else {
+            producto.setPorcentajeGanancia(calcularPorcentajeGanancia(request.costoCompra()));
         }
 
         producto.setStockMinimo(request.stockMinimo());
         producto.setUnidadMedida(request.unidadMedida());
-        producto.setActivo(request.activo());
-        if (request.cantidadDesconocida() != null) {
-            producto.setCantidadDesconocida(request.cantidadDesconocida());
-        }
 
-        Producto productoActualizado = productoRepository.save(producto);
+        final Producto productoActualizado = productoRepository.save(producto);
         return mapToDetalleDTO(productoActualizado);
+    }
+
+    @Transactional
+    public ProductoDetalleDTO desactivarProducto(final Long id, final Usuario usuario) {
+        verificarPermisosCambioEstado(usuario);
+        return cambiarEstado(id, false);
+    }
+
+    @Transactional
+    public ProductoDetalleDTO reactivarProducto(final Long id, final Usuario usuario) {
+        verificarPermisosCambioEstado(usuario);
+        return cambiarEstado(id, true);
     }
 
     @Transactional
@@ -161,6 +155,9 @@ public class ProductoService {
 
         Producto producto = productoRepository.findById(ajuste.productoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+        if (!producto.isActivo()) {
+            throw new ConflictException("No se puede ajustar inventario de un producto inactivo");
+        }
 
         // Registrar movimiento de inventario
         InventarioMovimiento movimiento = new InventarioMovimiento();
@@ -191,27 +188,23 @@ public class ProductoService {
         return mapToDetalleDTO(productoActualizado);
     }
 
-    public Page<ProductoListadoDTO> buscarProductos(ProductoBusquedaDTO busqueda, Pageable pageable) {
-        Page<Producto> productos;
-
-        // Si solo pide stock bajo
-        if (Boolean.TRUE.equals(busqueda.soloStockBajo())) {
-            productos = productoRepository.findProductosStockBajo(pageable);
-        }
-        // Si hay rango de precios
-        else if (busqueda.precioMin() != null && busqueda.precioMax() != null) {
-            productos = productoRepository.findByRangoPrecio(
-                    busqueda.precioMin(), busqueda.precioMax(), pageable);
-        }
-        // Búsqueda avanzada
-        else {
-            productos = productoRepository.buscarProductos(
-                    busqueda.termino(),
-                    busqueda.categoriaId(),
-                    busqueda.proveedorId(),
-                    busqueda.activo(),
-                    pageable);
-        }
+    @Transactional(readOnly = true)
+    public Page<ProductoListadoDTO> buscarProductos(
+            ProductoBusquedaDTO busqueda,
+            Pageable pageable,
+            Usuario usuario) {
+        final Boolean activo = usuario.getRol() == RolUsuario.VENDEDOR || busqueda.activo() == null
+                ? Boolean.TRUE
+                : busqueda.activo();
+        final Page<Producto> productos = productoRepository.buscarProductos(
+                busqueda.termino(),
+                busqueda.categoriaId(),
+                busqueda.proveedorId(),
+                activo,
+                busqueda.precioMin(),
+                busqueda.precioMax(),
+                Boolean.TRUE.equals(busqueda.soloStockBajo()),
+                pageable);
         // Forzar inicialización de fotos para evitar LazyInitializationException
         // y optimizar la consulta
         productos.getContent().forEach(p -> {
@@ -233,30 +226,33 @@ public class ProductoService {
 
     // Método optimizado para buscar por código de barras con fotos
     @Transactional(readOnly = true)
-    public ProductoDetalleDTO buscarPorCodigoBarras(String codigoBarras) {
-        Producto producto = productoRepository.findByCodigoBarrasWithFotos(codigoBarras)
+    public ProductoListadoDTO buscarActivoPorCodigoBarras(String codigoBarras) {
+        Producto producto = productoRepository.findByCodigoBarrasActivoWithFotos(codigoBarras.trim())
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
-        return mapToDetalleDTO(producto);
+        return mapToListadoDTO(producto);
     }
 
+    @Transactional(readOnly = true)
     public Page<ProductoListadoDTO> buscarPorCategoria(Long categoriaId, Pageable pageable) {
         Categoria categoria = categoriaRepository.findById(categoriaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada"));
 
-        return productoRepository.findByCategoria(categoria, pageable)
+        return productoRepository.findByCategoriaAndActivoTrue(categoria, pageable)
                 .map(this::mapToListadoDTO);
     }
 
+    @Transactional(readOnly = true)
     public Page<ProductoListadoDTO> buscarPorProveedor(Long proveedorId, String termino, Pageable pageable) {
         Proveedor proveedor = proveedorRepository.findById(proveedorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado"));
 
         if (termino != null && !termino.isBlank()) {
-            return productoRepository.buscarProductosPorProveedor(proveedorId, termino, pageable)
+            return productoRepository.buscarProductos(
+                            termino.trim(), null, proveedorId, true, null, null, false, pageable)
                     .map(this::mapToListadoDTO);
         }
 
-        return productoRepository.findByProveedor(proveedor, pageable)
+        return productoRepository.findByProveedorAndActivoTrue(proveedor, pageable)
                 .map(this::mapToListadoDTO);
     }
 
@@ -270,14 +266,40 @@ public class ProductoService {
         }
     }
 
-    private void verificarPermisosModificacion(Usuario usuario, Producto producto) {
-        // Inventarista solo puede modificar productos de su tienda? (si aplica)
-        if (usuario.getRol() == RolUsuario.INVENTARISTA) {
-            // Aquí podrías verificar si el producto pertenece a la tienda del usuario
-            // Por ahora solo verificamos que no sea admin/gerente
-        } else if (usuario.getRol() != RolUsuario.GERENTE &&
-                usuario.getRol() != RolUsuario.ADMINISTRADOR) {
-            throw new AccesoDenegadoException("No tiene permisos para modificar productos");
+    private Proveedor resolverProveedor(final Long proveedorId) {
+        if (proveedorId == null) {
+            return proveedorPendienteService.obtener();
+        }
+        final Proveedor proveedor = proveedorRepository.findById(proveedorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado"));
+        if (proveedor.isSistema()) {
+            throw new ConflictException(
+                    "Para usar el proveedor PENDIENTE omita proveedorId; no dependa de su ID interno");
+        }
+        if (!proveedor.isActivo()) {
+            throw new ConflictException("El proveedor seleccionado está inactivo");
+        }
+        return proveedor;
+    }
+
+    private ProductoDetalleDTO cambiarEstado(final Long id, final boolean activo) {
+        final Producto producto = productoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+        producto.setActivo(activo);
+        return mapToDetalleDTO(productoRepository.save(producto));
+    }
+
+    private void verificarPermisosEdicion(final Usuario usuario) {
+        if (usuario.getRol() != RolUsuario.INVENTARISTA
+                && usuario.getRol() != RolUsuario.GERENTE
+                && usuario.getRol() != RolUsuario.ADMINISTRADOR) {
+            throw new AccesoDenegadoException("No tiene permisos para crear o modificar productos");
+        }
+    }
+
+    private void verificarPermisosCambioEstado(final Usuario usuario) {
+        if (usuario.getRol() != RolUsuario.GERENTE && usuario.getRol() != RolUsuario.ADMINISTRADOR) {
+            throw new AccesoDenegadoException("No tiene permisos para cambiar el estado de productos");
         }
     }
 
@@ -334,7 +356,11 @@ public class ProductoService {
                 p.getNombre(),
                 p.getDescripcion(),
                 new CategoriaDTO(p.getCategoria().getId(), p.getCategoria().getNombre(), p.getCategoria().getDescripcion()),
-                new ProveedorDTO(p.getProveedor().getId(), p.getProveedor().getNombre(), p.getProveedor().getRfc(), p.getProveedor().getTelefono()),
+                new ProveedorDTO(
+                        p.getProveedor().getId(),
+                        p.getProveedor().getNombre(),
+                        p.getProveedor().getRfc(),
+                        p.getProveedor().getContacto()),
                 p.getCostoCompra(),
                 p.getPorcentajeGanancia(),
                 p.getPrecioVenta(),

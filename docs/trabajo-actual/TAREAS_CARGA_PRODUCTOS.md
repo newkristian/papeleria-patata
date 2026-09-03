@@ -1,6 +1,6 @@
 # Plan de trabajo — Carga de productos, inventario y proveedores
 
-**Estado del plan:** En desarrollo — Tareas 1, 2 y 3 completadas
+**Estado del plan:** En desarrollo — Tareas 1, 2, 3 y 4 completadas
 **Última actualización:** 2 de septiembre de 2026
 
 ## Propósito
@@ -313,7 +313,26 @@ debilitar la integridad referencial.
 
 ## Tarea 4 — Contratos y casos de uso backend de productos
 
-**Estado:** Pendiente
+**Estado:** Completada (2 de septiembre de 2026)
+
+Se separaron los contratos de alta y reemplazo completo, dejando fuera del control
+del cliente el precio calculado, el stock y el estado activo. El código de barras se
+normaliza y valida sin distinguir mayúsculas, y los duplicados producen 409. Las
+relaciones y valores comerciales se validan en servicio; omitir el proveedor asigna
+el registro reservado `PENDIENTE`, mientras un proveedor comercial inactivo se
+rechaza.
+
+Se añadieron operaciones explícitas de desactivación y reactivación sin borrado
+físico. Las consultas del POS devuelven únicamente un DTO seguro, sin costos, y
+excluyen inactivos por defecto para todos los roles; solo los roles administrativos
+pueden solicitar expresamente el catálogo inactivo. La consulta combinada aplica en
+una sola búsqueda los filtros de texto, categoría, proveedor, estado, precio y stock
+bajo.
+
+Verificación realizada: pruebas unitarias de creación, edición, proveedor reservado,
+permisos y ciclo de vida; integración HTTP de validaciones, conflictos, visibilidad,
+venta y persistencia de relaciones. El buscador Angular se adaptó al contrato seguro
+por código de barras sin exponer el DTO administrativo.
 
 ### Objetivo
 

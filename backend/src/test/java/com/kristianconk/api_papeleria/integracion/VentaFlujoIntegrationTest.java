@@ -11,7 +11,7 @@ import com.kristianconk.api_papeleria.enums.RolUsuario;
 import com.kristianconk.api_papeleria.enums.TipoDescuento;
 import com.kristianconk.api_papeleria.enums.TipoPromocion;
 import com.kristianconk.api_papeleria.error.ErrorResponse;
-import com.kristianconk.api_papeleria.producto.ProductoDetalleDTO;
+import com.kristianconk.api_papeleria.producto.ProductoListadoDTO;
 import com.kristianconk.api_papeleria.promocion.PromocionRequestDTO;
 import com.kristianconk.api_papeleria.promocion.PromocionResponseDTO;
 import com.kristianconk.api_papeleria.promocion.ReglaDescuentoPorCantidadDTO;
@@ -169,7 +169,7 @@ class VentaFlujoIntegrationTest {
 
     @Test
     void ventaConLineaDeStockInsuficiente_revierteTodoIncluidoElStockYaDescontado() {
-        final int stockAntes = get("/api/v1/productos/codigo/7501000110011", cajaToken, ProductoDetalleDTO.class)
+        final int stockAntes = get("/api/v1/productos/codigo/7501000110011", cajaToken, ProductoListadoDTO.class)
                 .getBody().stockActual();
 
         // La primera línea es válida y alcanzaría a descontar stock; la segunda pide
@@ -184,7 +184,7 @@ class VentaFlujoIntegrationTest {
         assertEquals(HttpStatus.BAD_REQUEST, respuesta.getStatusCode());
         assertTrue(respuesta.getBody().mensaje().contains("Stock insuficiente"));
 
-        final int stockDespues = get("/api/v1/productos/codigo/7501000110011", cajaToken, ProductoDetalleDTO.class)
+        final int stockDespues = get("/api/v1/productos/codigo/7501000110011", cajaToken, ProductoListadoDTO.class)
                 .getBody().stockActual();
         assertEquals(stockAntes, stockDespues);
     }

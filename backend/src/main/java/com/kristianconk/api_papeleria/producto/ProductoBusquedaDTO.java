@@ -13,7 +13,13 @@ public record ProductoBusquedaDTO(
         Boolean soloStockBajo
 ) {
     public ProductoBusquedaDTO {
-        // Valores por defecto
-        if (activo == null) activo = true;
+        termino = termino == null || termino.isBlank() ? null : termino.trim();
+        if ((precioMin != null && precioMin.signum() < 0)
+                || (precioMax != null && precioMax.signum() < 0)) {
+            throw new IllegalArgumentException("Los filtros de precio no pueden ser negativos");
+        }
+        if (precioMin != null && precioMax != null && precioMin.compareTo(precioMax) > 0) {
+            throw new IllegalArgumentException("El precio mínimo no puede ser mayor que el precio máximo");
+        }
     }
 }

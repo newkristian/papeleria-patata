@@ -4,14 +4,18 @@ import com.kristianconk.api_papeleria.auth.dto.AuthResponse;
 import com.kristianconk.api_papeleria.auth.dto.LoginRequest;
 import com.kristianconk.api_papeleria.categoria.CategoriaRequestDTO;
 import com.kristianconk.api_papeleria.categoria.CategoriaResponseDTO;
+import com.kristianconk.api_papeleria.enums.MetodoPago;
 import com.kristianconk.api_papeleria.enums.RolUsuario;
 import com.kristianconk.api_papeleria.error.ErrorResponse;
+import com.kristianconk.api_papeleria.producto.ProductoActualizarRequestDTO;
+import com.kristianconk.api_papeleria.producto.ProductoCrearRequestDTO;
 import com.kristianconk.api_papeleria.producto.ProductoDetalleDTO;
-import com.kristianconk.api_papeleria.producto.ProductoRequestDTO;
 import com.kristianconk.api_papeleria.proveedor.ProveedorRequestDTO;
 import com.kristianconk.api_papeleria.proveedor.ProveedorResponseDTO;
 import com.kristianconk.api_papeleria.usuario.UsuarioCreateRequestDTO;
 import com.kristianconk.api_papeleria.usuario.UsuarioResponseDTO;
+import com.kristianconk.api_papeleria.ventas.DetalleVentaRequestDTO;
+import com.kristianconk.api_papeleria.ventas.VentaRequestDTO;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -34,6 +38,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -133,6 +138,125 @@ class CatalogosIntegrationTest {
     }
 
     @Test
+    void productoPuedeCrearseYEditarProveedorSinConocerIdDePendiente() {
+        final String codigo = codigoUnico();
+        final ProductoCrearRequestDTO alta = new ProductoCrearRequestDTO(
+                codigo, "Producto sin proveedor", null, 1L, null,
+                new BigDecimal("25.00"), null, "pieza", null, null);
+        final ResponseEntity<ProductoDetalleDTO> creado =
+                post("/api/v1/productos", alta, inventaristaToken, ProductoDetalleDTO.class);
+
+        assertEquals(HttpStatus.CREATED, creado.getStatusCode());
+        assertNotNull(creado.getBody());
+        assertEquals("PENDIENTE", creado.getBody().proveedor().nombre());
+        assertTrue(creado.getBody().cantidadDesconocida());
+        assertEquals(0, creado.getBody().stockActual());
+
+        final Long productoId = creado.getBody().id();
+        final ProductoDetalleDTO conProveedor = put(
+                "/api/v1/productos/" + productoId,
+                actualizarProducto(codigo, 1L),
+                inventaristaToken,
+                ProductoDetalleDTO.class).getBody();
+        assertNotNull(conProveedor);
+        assertEquals(1L, conProveedor.proveedor().id());
+
+        final ProductoDetalleDTO cambiado = put(
+                "/api/v1/productos/" + productoId,
+                actualizarProducto(codigo, 2L),
+                inventaristaToken,
+                ProductoDetalleDTO.class).getBody();
+        assertNotNull(cambiado);
+        assertEquals(2L, cambiado.proveedor().id());
+
+        final ProductoDetalleDTO nuevamentePendiente = put(
+                "/api/v1/productos/" + productoId,
+                actualizarProducto(codigo, null),
+                inventaristaToken,
+                ProductoDetalleDTO.class).getBody();
+        assertNotNull(nuevamentePendiente);
+        assertEquals("PENDIENTE", nuevamentePendiente.proveedor().nombre());
+    }
+
+    @Test
+    void codigoDuplicadoYLimitesInvalidosDevuelvenErroresControlados() {
+        final String codigo = codigoUnico();
+        final ProductoCrearRequestDTO valido = new ProductoCrearRequestDTO(
+                codigo, "Producto original", null, 1L, 1L,
+                new BigDecimal("10.00"), 5, "pieza", null, true);
+        assertEquals(HttpStatus.CREATED,
+                post("/api/v1/productos", valido, adminToken, ProductoDetalleDTO.class).getStatusCode());
+
+        final ResponseEntity<ErrorResponse> duplicado =
+                post("/api/v1/productos", valido, adminToken, ErrorResponse.class);
+        assertEquals(HttpStatus.CONFLICT, duplicado.getStatusCode());
+
+        final ProductoCrearRequestDTO invalido = new ProductoCrearRequestDTO(
+                "código con espacios", " ", null, -1L, null,
+                new BigDecimal("-1.00"), -1, " ", new BigDecimal("1000.00"), true);
+        assertEquals(HttpStatus.BAD_REQUEST,
+                post("/api/v1/productos", invalido, adminToken, ErrorResponse.class).getStatusCode());
+    }
+
+    @Test
+    void cicloDeVidaProtegeCostosPosYRelacionesHistoricas() {
+        final String codigo = codigoUnico();
+        final ProductoDetalleDTO producto = crearProducto(adminToken, 1L, 1L, "Ciclo de vida");
+        final Long productoId = producto.id();
+
+        final ResponseEntity<String> consultaPosActiva =
+                get("/api/v1/productos/codigo/" + producto.codigoBarras(), vendedorToken, String.class);
+        assertEquals(HttpStatus.OK, consultaPosActiva.getStatusCode());
+        assertFalse(consultaPosActiva.getBody().contains("costoCompra"));
+        assertFalse(consultaPosActiva.getBody().contains("porcentajeGanancia"));
+        assertEquals(HttpStatus.FORBIDDEN,
+                get("/api/v1/productos/" + productoId, vendedorToken, ErrorResponse.class).getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN,
+                patch("/api/v1/productos/" + productoId + "/desactivar", inventaristaToken,
+                        ErrorResponse.class).getStatusCode());
+
+        final ResponseEntity<ProductoDetalleDTO> desactivado = patch(
+                "/api/v1/productos/" + productoId + "/desactivar", gerenteToken, ProductoDetalleDTO.class);
+        assertEquals(HttpStatus.OK, desactivado.getStatusCode());
+        assertFalse(desactivado.getBody().activo());
+        assertEquals(1L, contar("SELECT COUNT(*) FROM productos WHERE id = " + productoId));
+        assertEquals(HttpStatus.NOT_FOUND,
+                get("/api/v1/productos/codigo/" + producto.codigoBarras(), vendedorToken,
+                        ErrorResponse.class).getStatusCode());
+
+        final ResponseEntity<String> busquedaVendedor = get(
+                "/api/v1/productos/buscar?termino=" + producto.codigoBarras() + "&activo=false",
+                vendedorToken,
+                String.class);
+        assertEquals(HttpStatus.OK, busquedaVendedor.getStatusCode());
+        assertFalse(busquedaVendedor.getBody().contains(producto.codigoBarras()));
+        final ResponseEntity<String> busquedaAdmin = get(
+                "/api/v1/productos/buscar?termino=" + producto.codigoBarras() + "&activo=false",
+                adminToken,
+                String.class);
+        assertTrue(busquedaAdmin.getBody().contains(producto.codigoBarras()));
+
+        final VentaRequestDTO venta = new VentaRequestDTO(
+                null, MetodoPago.EFECTIVO, List.of(new DetalleVentaRequestDTO(productoId, 1, null)), null);
+        assertEquals(HttpStatus.BAD_REQUEST,
+                post("/api/v1/ventas", venta, vendedorToken, ErrorResponse.class).getStatusCode());
+
+        final ResponseEntity<ProductoDetalleDTO> reactivado = patch(
+                "/api/v1/productos/" + productoId + "/reactivar", gerenteToken, ProductoDetalleDTO.class);
+        assertEquals(HttpStatus.OK, reactivado.getStatusCode());
+        assertTrue(reactivado.getBody().activo());
+        assertEquals(HttpStatus.OK,
+                get("/api/v1/productos/codigo/" + producto.codigoBarras(), vendedorToken,
+                        String.class).getStatusCode());
+
+        final ProductoCrearRequestDTO altaVendedor = new ProductoCrearRequestDTO(
+                codigo, "No autorizado", null, 1L, null,
+                new BigDecimal("10.00"), 5, "pieza", null, true);
+        assertEquals(HttpStatus.FORBIDDEN,
+                post("/api/v1/productos", altaVendedor, vendedorToken, ErrorResponse.class).getStatusCode());
+    }
+
+    @Test
     void permisosDeCatalogosRechazanRolesNoAutorizados() {
         final CategoriaRequestDTO categoria = new CategoriaRequestDTO("Sin permiso", null);
         assertEquals(HttpStatus.FORBIDDEN,
@@ -229,8 +353,8 @@ class CatalogosIntegrationTest {
             final Long categoriaId,
             final Long proveedorId,
             final String sufijo) {
-        final String codigo = "IT" + UUID.randomUUID().toString().replace("-", "");
-        final ProductoRequestDTO request = new ProductoRequestDTO(
+        final String codigo = codigoUnico();
+        final ProductoCrearRequestDTO request = new ProductoCrearRequestDTO(
                 codigo,
                 "Producto IT " + sufijo,
                 "Producto temporal para validar catálogos",
@@ -240,7 +364,6 @@ class CatalogosIntegrationTest {
                 5,
                 "pieza",
                 null,
-                true,
                 true);
         final ResponseEntity<ProductoDetalleDTO> respuesta =
                 post("/api/v1/productos", request, token, ProductoDetalleDTO.class);
@@ -280,6 +403,16 @@ class CatalogosIntegrationTest {
         return restTemplate.exchange(path, HttpMethod.POST, new HttpEntity<>(body, headers(token)), tipo);
     }
 
+    private <T> ResponseEntity<T> put(
+            final String path, final Object body, final String token, final Class<T> tipo) {
+        return restTemplate.exchange(path, HttpMethod.PUT, new HttpEntity<>(body, headers(token)), tipo);
+    }
+
+    private <T> ResponseEntity<T> patch(
+            final String path, final String token, final Class<T> tipo) {
+        return restTemplate.exchange(path, HttpMethod.PATCH, new HttpEntity<>(headers(token)), tipo);
+    }
+
     private <T> ResponseEntity<T> get(final String path, final String token, final Class<T> tipo) {
         return restTemplate.exchange(path, HttpMethod.GET, new HttpEntity<>(headers(token)), tipo);
     }
@@ -297,6 +430,23 @@ class CatalogosIntegrationTest {
 
     private long contar(final String sql) {
         return jdbcTemplate.queryForObject(sql, Long.class);
+    }
+
+    private ProductoActualizarRequestDTO actualizarProducto(final String codigo, final Long proveedorId) {
+        return new ProductoActualizarRequestDTO(
+                codigo,
+                "Producto actualizado",
+                "Edición de prueba",
+                1L,
+                proveedorId,
+                new BigDecimal("25.00"),
+                5,
+                "pieza",
+                null);
+    }
+
+    private String codigoUnico() {
+        return "IT" + UUID.randomUUID().toString().replace("-", "");
     }
 
     private void instalarBloqueoDePrueba(final Long proveedorId) {

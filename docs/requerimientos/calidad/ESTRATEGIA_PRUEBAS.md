@@ -10,8 +10,8 @@ pruebas unitarias y de integración enfocadas en riesgo.
 
 ## Implementación verificada
 
-- La suite backend ejecuta 97 pruebas: 85 unitarias y doce escenarios de integración
-  de ventas y catálogos.
+- La suite backend ejecuta 111 pruebas: 96 unitarias y quince escenarios de
+  integración de ventas y catálogos.
 - La integración usa Testcontainers con PostgreSQL 16.2 y aplica las 13 migraciones
   Flyway sobre un esquema limpio. La prueba de catálogos comprueba además V13 sobre
   los datos existentes de migraciones anteriores y confirma que una segunda ejecución
@@ -24,6 +24,10 @@ pruebas unitarias y de integración enfocadas en riesgo.
   completa, la suite frontend y el build de producción Angular.
 - La cobertura de catálogos incluye validación, conflictos de relaciones, matriz de
   roles, invariantes de `PENDIENTE`, reasignación masiva y rollback transaccional.
+- La cobertura de productos incluye contratos de alta y edición, código de barras
+  duplicado, asignación y cambio de proveedor, límites de campos, ciclo de vida
+  lógico, persistencia de relaciones, bloqueo de venta inactiva y respuestas del POS
+  sin costos.
 
 ## Consideraciones del entorno
 

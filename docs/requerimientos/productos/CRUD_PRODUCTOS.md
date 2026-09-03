@@ -50,20 +50,28 @@ proveedor, costos, precio y estado de inventario, sin eliminar su historial.
 
 ## Implementación verificada
 
-- Existen creación, actualización y consulta por ID mediante DTOs.
-- El servicio calcula el porcentaje de ganancia y valida relaciones requeridas.
+- Existen contratos independientes para creación y reemplazo completo mediante
+  actualización; stock, estado activo y precio calculado no son controlables desde
+  esos contratos.
+- El servicio calcula el porcentaje de ganancia, valida relaciones requeridas y
+  asigna `PENDIENTE` cuando se omite el proveedor.
 - Costo, porcentaje de ganancia y precio de venta utilizan `BigDecimal`; el precio se
   redondea a dos decimales con `HALF_UP`.
+- El código de barras se normaliza a mayúsculas y su unicidad se valida sin distinguir
+  mayúsculas; los duplicados producen 409.
+- Existen operaciones explícitas para desactivar y reactivar. La desactivación no
+  elimina la fila ni sus relaciones y un producto inactivo no puede venderse.
+- El POS recibe un DTO de listado sin costos y solo puede consultar productos activos.
+- La autorización de lectura y escritura está aplicada por operación en controller y,
+  para reglas sensibles, también en servicio.
 
 ## Pendientes conocidos
 
-- Asignar automáticamente `PENDIENTE` cuando no se seleccione proveedor.
-- Separar contratos de alta y edición si el contrato actual obliga a reenviar campos
-  que no cambian.
-- Implementar operaciones explícitas de desactivación y reactivación.
-- Excluir productos inactivos de las búsquedas del POS por defecto.
-- Aplicar autorización por operación y evitar exposición de costos a `VENDEDOR`.
-- Añadir interfaz administrativa y cobertura de pruebas.
+- Añadir la interfaz administrativa para completar el flujo desde una sesión de
+  usuario sin llamadas manuales a la API.
+- Completar en la tarea de inventario la semántica de ventas y movimientos mientras
+  `cantidadDesconocida = true`, incluida la concurrencia.
+- Completar el pipeline seguro y asíncrono de fotografías.
 
 ## Dependencias de datos verificadas
 

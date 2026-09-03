@@ -56,21 +56,7 @@ export class BuscadorProductosComponent implements OnDestroy {
       return;
     }
     this.productoService.buscarPorCodigoBarras(codigo).subscribe({
-      next: (producto) =>
-        this.seleccionar({
-          id: producto.id,
-          codigoBarras: producto.codigoBarras,
-          nombre: producto.nombre,
-          categoriaNombre: producto.categoria.nombre,
-          proveedorNombre: producto.proveedor.nombre,
-          precioVenta: producto.precioVenta,
-          stockActual: producto.stockActual,
-          stockMinimo: producto.stockMinimo,
-          activo: producto.activo,
-          cantidadDesconocida: producto.cantidadDesconocida,
-          urlThumbnail: null,
-          tieneFotos: false,
-        }),
+      next: (producto) => this.seleccionar(producto),
       error: () => {
         /* no es un código de barras válido: se ignora, no es un error de búsqueda */
       },

@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Pagina, ProductoDetalle, ProductoListado } from '../models/producto.model';
+import { Pagina, ProductoListado } from '../models/producto.model';
 import { ProductoService } from './producto.service';
 
 describe('ProductoService', () => {
@@ -48,7 +48,7 @@ describe('ProductoService', () => {
 
   it('should request /codigo/{codigoBarras} url-encoded', () => {
     const service = TestBed.inject(ProductoService);
-    const detalle = { id: 1, codigoBarras: '750/123' } as ProductoDetalle;
+    const detalle = { id: 1, codigoBarras: '750/123' } as ProductoListado;
 
     service.buscarPorCodigoBarras('750/123').subscribe();
 
