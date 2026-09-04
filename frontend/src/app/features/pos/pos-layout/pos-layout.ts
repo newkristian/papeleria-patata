@@ -5,13 +5,15 @@ import { CarritoService } from '../../../core/services/carrito.service';
 import { BuscadorProductosComponent } from '../buscador-productos/buscador-productos';
 import { CarritoComponent } from '../carrito/carrito';
 import { CobroComponent } from '../cobro/cobro';
+import { TopNavBarComponent } from '../../../shared/components/top-nav-bar.component';
 
 @Component({
   selector: 'app-pos-layout',
-  imports: [BuscadorProductosComponent, CarritoComponent, CobroComponent],
+  imports: [BuscadorProductosComponent, CarritoComponent, CobroComponent, TopNavBarComponent],
   templateUrl: './pos-layout.html',
 })
 export class PosLayoutComponent {
+
   private readonly authService = inject(AuthService);
   private readonly carritoService = inject(CarritoService);
 

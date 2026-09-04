@@ -460,9 +460,29 @@ Permitir navegación administrativa coherente con la autorización real del back
 
 ## Tarea 8 — Área administrativa y navegación
 
-**Estado:** Pendiente
+**Estado:** Completada (4 de septiembre de 2026)
 
-### Objetivo
+Se implementó el contenedor frontend administrativo y la navegación unificada:
+1. **Barra superior transversal compartida (`TopNavBarComponent`)**:
+   - Creado componente standalone reutilizable en todas las pantallas (`/pos`, `/admin`, `/perfil`).
+   - Muestra el nombre del usuario, su rol asignado (`ADMINISTRADOR`, `GERENTE`, `INVENTARISTA`, `VENDEDOR`) y nombre de la sucursal/tienda.
+   - Enlace contextual dinámico al POS y botón "Administración" visible únicamente si el usuario tiene rol con permisos administrativos (`ADMINISTRADOR`, `GERENTE`, `INVENTARISTA`).
+   - Menú de acordeón desplegable en la esquina superior derecha con opciones para ir a "Mi Perfil (Editar datos y clave)", acceso rápido a "Punto de Venta", acceso a "Panel de Administración" y botón seguro de "Cerrar sesión".
+2. **Layout y navegación administrativa responsiva (`AdminLayoutComponent`, `AdminDashboardComponent`)**:
+   - Barra lateral desktop/tablet con filtrado reactivo de módulos según el rol (Productos, Categorías, Proveedores, Inventario y Usuarios).
+   - Barra móvil/tablet con scroll horizontal para pantallas reducidas.
+   - Dashboard de bienvenida con tarjetas interactivas de módulos administrativos.
+   - Enlace directo de regreso al POS integrado en el layout.
+3. **Rutas protegidas granulares (`app.routes.ts`)**:
+   - Ruta base `/admin` protegida con `roleGuard(['ADMINISTRADOR', 'GERENTE', 'INVENTARISTA'])`.
+   - Sub-rutas hijas `/admin/productos`, `/admin/categorias`, `/admin/proveedores`, `/admin/inventario` y `/admin/usuarios` protegidas con sus roles correspondientes mediante `roleGuard`.
+   - Ruta `/perfil` protegida con `authGuard`.
+4. **Verificación y pruebas**:
+   - Pruebas unitarias completas: `admin-layout.spec.ts`, `top-nav-bar.component.spec.ts`.
+   - Suite total de pruebas frontend: **38 tests pasados con éxito, 0 fallos**.
+   - Build de producción (`ng build`) completado sin advertencias ni errores.
+
+---
 
 Crear el contenedor frontend para productos, proveedores e inventario.
 

@@ -1,16 +1,7 @@
 <div class="h-screen flex flex-col bg-gray-100 font-sans">
-  <!-- Barra superior: propia del POS, no reutiliza la landing pública. -->
-  <header class="bg-white border-b border-gray-200 shadow-sm shrink-0">
-    <div class="px-4 sm:px-6 h-16 flex items-center justify-between">
-      <span class="text-xl font-bold text-blue-600 tracking-tight">Papelería Patata · POS</span>
-      <button
-        type="button"
-        (click)="cerrarSesion()"
-        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-        Cerrar sesión
-      </button>
-    </div>
-  </header>
+  <!-- Barra superior unificada con identidad, rol, accesos y menú de usuario -->
+  <app-top-nav-bar />
+
 
   <!-- Área principal: buscador a la izquierda, carrito a la derecha. Apila en
        pantallas angostas; pensada para operación en tablet apaisada. -->
