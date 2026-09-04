@@ -39,14 +39,12 @@ export const routes: Routes = [
       {
         path: 'categorias',
         canActivate: [roleGuard(['ADMINISTRADOR', 'GERENTE', 'INVENTARISTA'])],
-        loadComponent: () => import('./features/admin/pages/admin-placeholder.component').then(m => m.AdminPlaceholderComponent),
-        data: { titulo: 'Gestión de Categorías', descripcion: 'Administración y clasificación de categorías de la papelería.' }
+        loadComponent: () => import('./features/admin/categorias/categorias-admin.component').then(m => m.CategoriasAdminComponent)
       },
       {
         path: 'proveedores',
         canActivate: [roleGuard(['ADMINISTRADOR', 'GERENTE'])],
-        loadComponent: () => import('./features/admin/pages/admin-placeholder.component').then(m => m.AdminPlaceholderComponent),
-        data: { titulo: 'Gestión de Proveedores', descripcion: 'Control de proveedores, acuerdos de comisión y estado pendiente.' }
+        loadComponent: () => import('./features/admin/proveedores/proveedores-admin.component').then(m => m.ProveedoresAdminComponent)
       },
       {
         path: 'inventario',

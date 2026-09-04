@@ -65,7 +65,7 @@ class ProveedorServiceTest {
     void buscarNormalizaTerminoYMapeaPagina() {
         final PageRequest pageable = PageRequest.of(0, 20);
         final Proveedor proveedor = proveedor(10L, "Distribuidora Norte", false, false);
-        when(proveedorRepository.buscar("Norte", false, pageable))
+        when(proveedorRepository.buscar("%norte%", false, pageable))
                 .thenReturn(new PageImpl<>(List.of(proveedor), pageable, 1));
 
         final Page<ProveedorResponseDTO> resultado = proveedorService.buscar("  Norte  ", false, pageable);

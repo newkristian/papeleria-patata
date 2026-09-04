@@ -295,6 +295,35 @@ class CatalogosIntegrationTest {
     }
 
     @Test
+    void buscarProveedoresConPaginacionYFiltros() {
+        // 1. Sin filtros: page=0&size=15
+        final ResponseEntity<String> sinFiltros =
+                get("/api/v1/proveedores/buscar?page=0&size=15", adminToken, String.class);
+        assertEquals(HttpStatus.OK, sinFiltros.getStatusCode());
+        assertNotNull(sinFiltros.getBody());
+
+        // 2. Con término de búsqueda
+        final ResponseEntity<String> conTermino =
+                get("/api/v1/proveedores/buscar?termino=scribe&page=0&size=15", gerenteToken, String.class);
+        assertEquals(HttpStatus.OK, conTermino.getStatusCode());
+
+        // 3. Con filtro activo=true
+        final ResponseEntity<String> soloActivos =
+                get("/api/v1/proveedores/buscar?activo=true&page=0&size=15", inventaristaToken, String.class);
+        assertEquals(HttpStatus.OK, soloActivos.getStatusCode());
+
+        // 4. Con filtro activo=false
+        final ResponseEntity<String> soloInactivos =
+                get("/api/v1/proveedores/buscar?activo=false&page=0&size=15", adminToken, String.class);
+        assertEquals(HttpStatus.OK, soloInactivos.getStatusCode());
+
+        // 5. Usuario sin permisos (vendedor) debe ser rechazado con 403
+        final ResponseEntity<ErrorResponse> sinPermiso =
+                get("/api/v1/proveedores/buscar?page=0&size=15", vendedorToken, ErrorResponse.class);
+        assertEquals(HttpStatus.FORBIDDEN, sinPermiso.getStatusCode());
+    }
+
+    @Test
     void desactivarProveedorReasignaProductosYLaOperacionEsAtomica() {
         final ProveedorResponseDTO proveedor = post(
                 "/api/v1/proveedores", proveedorRequest("Proveedor a desactivar"), adminToken,

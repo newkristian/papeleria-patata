@@ -49,6 +49,14 @@ public class ProveedorController {
         return ResponseEntity.ok(proveedorService.getProveedorById(id));
     }
 
+    @GetMapping("/{id}/productos/conteo")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA')")
+    @Operation(summary = "Obtener conteo de productos asociados a un proveedor")
+    public ResponseEntity<Long> contarProductos(@PathVariable Long id) {
+        return ResponseEntity.ok(proveedorService.contarProductosAsignados(id));
+    }
+
+
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE')")
     @Operation(summary = "Crear un nuevo proveedor (Solo ADMINISTRADOR y GERENTE)")

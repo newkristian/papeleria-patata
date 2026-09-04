@@ -22,12 +22,12 @@ public interface ProveedorRepository extends JpaRepository<Proveedor, Long> {
     List<Proveedor> findAllByActivoTrueAndSistemaFalseOrderByNombreAsc();
 
     @Query("SELECT p FROM Proveedor p WHERE p.sistema = false " +
-            "AND (:termino IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :termino, '%')) " +
-            "OR LOWER(COALESCE(p.rfc, '')) LIKE LOWER(CONCAT('%', :termino, '%')) " +
-            "OR LOWER(COALESCE(p.contacto, '')) LIKE LOWER(CONCAT('%', :termino, '%'))) " +
+            "AND (:patron IS NULL OR LOWER(p.nombre) LIKE :patron " +
+            "OR LOWER(COALESCE(p.rfc, '')) LIKE :patron " +
+            "OR LOWER(COALESCE(p.contacto, '')) LIKE :patron) " +
             "AND (:activo IS NULL OR p.activo = :activo)")
     Page<Proveedor> buscar(
-            @Param("termino") String termino,
+            @Param("patron") String patron,
             @Param("activo") Boolean activo,
             Pageable pageable);
 }

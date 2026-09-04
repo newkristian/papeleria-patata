@@ -36,10 +36,10 @@ public class ProveedorService {
             final String termino,
             final Boolean activo,
             final Pageable pageable) {
-        final String terminoNormalizado = termino == null || termino.isBlank()
+        final String patron = (termino == null || termino.isBlank())
                 ? null
-                : termino.trim();
-        return proveedorRepository.buscar(terminoNormalizado, activo, pageable)
+                : "%" + termino.trim().toLowerCase() + "%";
+        return proveedorRepository.buscar(patron, activo, pageable)
                 .map(proveedorMapper::toDto);
     }
     
@@ -49,6 +49,15 @@ public class ProveedorService {
                 .map(proveedorMapper::toDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado con ID: " + id));
     }
+
+    @Transactional(readOnly = true)
+    public long contarProductosAsignados(Long id) {
+        if (!proveedorRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Proveedor no encontrado con ID: " + id);
+        }
+        return productoRepository.countByProveedorId(id);
+    }
+
     
     @Transactional
     public ProveedorResponseDTO createProveedor(ProveedorRequestDTO request) {

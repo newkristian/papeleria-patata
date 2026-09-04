@@ -504,7 +504,32 @@ Crear el contenedor frontend para productos, proveedores e inventario.
 
 ## Tarea 9 — Interfaces de categorías y proveedores
 
-**Estado:** Pendiente
+**Estado:** Completada (4 de septiembre de 2026)
+
+Se desarrollaron y verificaron de extremo a extremo las interfaces de gestión de categorías y proveedores conectadas con el backend:
+1. **Modelos y contratos (`categoria.model.ts`, `proveedor.model.ts`)**:
+   - Modelado de categoría con ID opcional para creación, nombre y descripción.
+   - Modelado de proveedor con soporte de RFC, porcentaje de comisión, teléfono, contacto, email, flags de `activo` y proveedor protegido de `sistema` (`PENDIENTE`).
+2. **Servicios HTTP reactivos (`CategoriaService`, `ProveedorService`)**:
+   - `CategoriaService`: `listarTodas()`, `obtenerPorId()`, `crear()`, `actualizar()` y `eliminar()` apuntando a `/api/v1/categorias`.
+   - `ProveedorService`: `listarTodos()`, `buscar(termino, activo, page, size)` con mapeo del formato PageDTO del backend, `obtenerPorId()`, `crear()`, `actualizar()`, `desactivar()` y `contarProductosAsignados(id)`.
+   - **Extensión de Backend**: Se agregó `contarProductosAsignados` en `ProveedorService` y el endpoint `GET /api/v1/proveedores/{id}/productos/conteo` en `ProveedorController` para conocer la cantidad exacta de productos que serán reasignados al proveedor del sistema antes de confirmar la desactivación.
+3. **Componente de administración de categorías (`CategoriasAdminComponent`)**:
+   - Listado reactivo con conteo total y diseño en tarjetas limpias.
+   - Modal de creación y edición con validaciones (`nombre` obligatorio hasta 255 caracteres, `descripcion` opcional hasta 500 caracteres).
+   - Acceso seguro condicionado a `ADMINISTRADOR` e `INVENTARISTA` mediante `authService.canManageProducts()`.
+   - Manejo de estados de carga, vacío, alertas de éxito y reporte de errores backend.
+4. **Componente de administración de proveedores (`ProveedoresAdminComponent`)**:
+   - Tabla paginada completa con búsqueda interactiva (por nombre, RFC o contacto) y filtro por estado (todos, solo activos, solo inactivos).
+   - Badge distintivo para proveedor de sistema `PENDIENTE`, bloqueando edición o desactivación sobre el mismo.
+   - Formulario modal para alta y edición con validación de RFC mexicano vía regex, porcentaje de comisión (0 a 100), formato de teléfono y correo electrónico.
+   - Flujo de desactivación segura exclusivo para `ADMINISTRADOR` (`authService.canDeactivateProviders()`): diálogo modal que consulta e informa la cantidad de productos asociados que serán transferidos automáticamente al proveedor `PENDIENTE`.
+   - Alta y edición disponibles para `ADMINISTRADOR` y `GERENTE` (`authService.canManageProviders()`).
+5. **Rutas y navegación integrada**:
+   - Conectadas las rutas `/admin/categorias` y `/admin/proveedores` bajo `AdminLayoutComponent` en `app.routes.ts`.
+6. **Verificación y pruebas**:
+   - Frontend: 15 archivos de pruebas y 54 pruebas unitarias pasando con Vitest (`proveedores-admin.component.spec.ts`, `categorias-admin.component.spec.ts`, `proveedor.service.spec.ts`, `categoria.service.spec.ts`). Build de producción Angular (`ng build`) completado con éxito generando chunks independientes `categorias-admin-component` y `proveedores-admin-component`.
+   - Backend: Pruebas unitarias de `ProveedorServiceTest` y suite completa de integración pasando exitosamente con base de datos PostgreSQL.
 
 ### Objetivo
 
