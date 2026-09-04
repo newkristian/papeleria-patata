@@ -1,3 +1,13 @@
+# ==============================================================================
+# MANIFIESTO DOCKER COMPOSE — ENTORNO DE DESARROLLO LOCAL (DEV)
+# ==============================================================================
+# Uso típico en desarrollo:
+#   docker compose up -d
+#
+# Para despliegues en producción (exige secretos y desactiva fallbacks):
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# ==============================================================================
+
 services:
   db:
     image: postgres:16.2-alpine
@@ -7,9 +17,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pospass}
     volumes:
       - db-data:/var/lib/postgresql/data
-    # No se publica 5432 al host por defecto: backend y db se hablan por la
-    # red interna de compose. Si necesitas conectar un cliente SQL local,
-    # descomenta y ajusta el puerto externo si 5432 ya está en uso:
+    # No se publica el puerto 5432 al host por defecto para mantener seguridad.
+    # Si requieres conectar una herramienta de base de datos local en desarrollo,
+    # descomenta las siguientes líneas:
     # ports:
     #   - "5433:5432"
     healthcheck:
@@ -29,6 +39,7 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-pospass}
       JWT_SECRET: ${JWT_SECRET:-Ptt-k@uuaii-JWT-S3cr3t-K3y-256-b1ts-M1n1mum!}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-3600000}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-86400000}
     volumes:
       - backend-uploads:/app/upload-dir
     ports:

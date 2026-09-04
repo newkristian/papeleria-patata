@@ -1,0 +1,29 @@
+# ==============================================================================
+# OVERRIDE DOCKER COMPOSE — ENTORNO DE PRODUCCIÓN (PROD)
+# ==============================================================================
+# Uso en producción:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Este archivo invalida los valores de respaldo de desarrollo y exige que todas
+# las variables de entorno sensibles (POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD,
+# JWT_SECRET) estén definidas formalmente en el entorno o en el archivo .env.
+# ==============================================================================
+
+services:
+  db:
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:?POSTGRES_DB es obligatoria en produccion}"
+      POSTGRES_USER: "${POSTGRES_USER:?POSTGRES_USER es obligatoria en produccion}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD es obligatoria en produccion}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: "jdbc:postgresql://db:5432/${POSTGRES_DB:?POSTGRES_DB es obligatoria en produccion}"
+      DATABASE_USER: "${POSTGRES_USER:?POSTGRES_USER es obligatoria en produccion}"
+      DATABASE_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD es obligatoria en produccion}"
+      JWT_SECRET: "${JWT_SECRET:?JWT_SECRET es obligatoria en produccion}"
+      JWT_EXPIRATION: "${JWT_EXPIRATION:-3600000}"
+      JWT_REFRESH_EXPIRATION: "${JWT_REFRESH_EXPIRATION:-86400000}"
