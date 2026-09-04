@@ -174,20 +174,40 @@ public class ProductoController {
     }
 
     @PostMapping(value = "/{productoId}/fotos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Subir foto para un producto")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA')")
+    @Operation(summary = "Subir foto para un producto (procesamiento asíncrono seguro)")
     public ResponseEntity<ProductoFotoDTO> subirFoto(
             @PathVariable Long productoId,
             @ModelAttribute SubirFotoRequest request,
             @AuthenticationPrincipal Usuario usuario) {
 
         ProductoFotoDTO foto = fotoService.subirFoto(productoId, request, usuario);
-        return ResponseEntity.status(HttpStatus.CREATED).body(foto);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(foto);
     }
 
     @GetMapping("/{productoId}/fotos")
     @Operation(summary = "Listar todas las fotos de un producto")
     public ResponseEntity<List<ProductoFotoDTO>> listarFotos(@PathVariable Long productoId) {
         return ResponseEntity.ok(fotoService.listarFotos(productoId));
+    }
+
+    @GetMapping("/{productoId}/fotos/{fotoId}/estado")
+    @Operation(summary = "Consultar el estado de procesamiento de una fotografía")
+    public ResponseEntity<ProductoFotoDTO> consultarEstadoFoto(
+            @PathVariable Long productoId,
+            @PathVariable Long fotoId) {
+        return ResponseEntity.ok(fotoService.consultarEstadoFoto(productoId, fotoId));
+    }
+
+    @PostMapping("/{productoId}/fotos/{fotoId}/reintentar")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA')")
+    @Operation(summary = "Reintentar procesamiento de fotografía fallida")
+    public ResponseEntity<ProductoFotoDTO> reintentarFoto(
+            @PathVariable Long productoId,
+            @PathVariable Long fotoId,
+            @AuthenticationPrincipal Usuario usuario) {
+        ProductoFotoDTO foto = fotoService.reintentarProcesamiento(productoId, fotoId, usuario);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(foto);
     }
 
     @GetMapping("/{productoId}/fotos/{fotoId}")
@@ -207,6 +227,7 @@ public class ProductoController {
     }
 
     @DeleteMapping("/{productoId}/fotos/{fotoId}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA')")
     @Operation(summary = "Eliminar foto de producto")
     public ResponseEntity<Void> eliminarFoto(
             @PathVariable Long productoId,
@@ -218,6 +239,7 @@ public class ProductoController {
     }
 
     @PutMapping("/{productoId}/fotos/{fotoId}/principal")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'INVENTARISTA')")
     @Operation(summary = "Establecer foto como principal")
     public ResponseEntity<ProductoFotoDTO> establecerPrincipal(
             @PathVariable Long productoId,

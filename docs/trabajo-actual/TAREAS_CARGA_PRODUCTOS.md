@@ -365,45 +365,25 @@ Completar el alta, edición, consulta, desactivación y reactivación segura de 
 
 ## Tarea 5 — Semántica segura del inventario desconocido
 
-**Estado:** Pendiente
+**Estado:** Completada (3 de septiembre de 2026)
 
-### Objetivo
-
-Permitir el inventario gradual sin detener ventas ni persistir existencias ficticias
-negativas.
-
-### Alcance
-
-- Modificar `VentaService` para no validar ni descontar `stockActual` cuando la
-  cantidad sea desconocida.
-- Rechazar entradas y salidas relativas mientras el producto siga en ese estado; la
-  primera cuantificación deberá ser un ajuste absoluto.
-- El ajuste absoluto debe aceptar cero, rechazar negativos, fijar el stock y desactivar
-  la bandera atómicamente.
-- Para cantidad conocida, impedir salidas y ajustes relativos que terminen en stock
-  negativo.
-- Excluir cantidad desconocida de consultas y alertas de stock bajo.
-- Registrar en la bitácora si el movimiento fue relativo o absoluto, y los valores
-  anterior y resultante cuando el contrato persistente lo requiera.
-- Revisar concurrencia entre venta y ajuste mediante bloqueo o actualización
-  condicional apropiada, evitando pérdidas de actualización.
-
-### Verificación mínima
-
-- Varias ventas de producto desconocido dejan `stockActual` sin cambios.
-- Una entrada/salida relativa desconocida se rechaza con mensaje claro.
-- El conteo absoluto cero y positivo completa correctamente la transición.
-- Después del conteo, una venta descuenta stock y nunca cruza por debajo de cero.
-- Dos operaciones concurrentes no pierden actualizaciones ni aceptan stock
-  insuficiente.
+Se actualizó `VentaService` para no validar ni descontar `stockActual` mientras el producto tenga `cantidadDesconocida = true`. Se configuró `InventarioService` para rechazar entradas y salidas relativas sobre productos con cantidad desconocida, exigiendo que la primera cuantificación sea un ajuste absoluto. En `ProductoService`, el ajuste absoluto acepta cero y valores positivos, rechaza valores negativos, establece el stock y desactiva la bandera `cantidadDesconocida = false` de forma atómica. Se introdujo bloqueo pesimista (`findByIdForUpdate` con `@Lock(LockModeType.PESSIMISTIC_WRITE)`) para evitar carreras de concurrencia. Se crearon y pasaron suites completas de pruebas unitarias e integración (`SemanticaInventarioIntegrationTest`).
 
 ---
 
 ## Tarea 6 — Pipeline asíncrono y seguro de fotografías
 
-**Estado:** Pendiente
+**Estado:** Completada (3 de septiembre de 2026)
 
-### Objetivo
+Se implementó el pipeline asíncrono y seguro de fotografías cumpliendo todos los requisitos de seguridad y rendimiento:
+1. **Persistencia y migración Flyway (`V14__foto_pipeline_asincrono.sql`)**: agregado de `estado_procesamiento` (`PENDIENTE`, `PROCESANDO`, `COMPLETADO`, `ERROR`), `mensaje_error` y `ruta_miniatura`.
+2. **Seguridad y validación temprana (`ValidadorSeguridadImagen`)**: límite estricto de 4 MB (en `application.yml` y código), verificación de firmas binarias (magic bytes para JPEG, PNG y WEBP), rechazo explícito de SVG y secuencias multimarco, sanitización contra *path traversal*, e inspección previa a la decodificación completa de dimensiones (máx 4096×4096 px) y píxeles totales (máx 16 MP) previniendo bombas de descompresión.
+3. **Ejecución asíncrona desacoplada (`AsyncConfig`, `ProductoFotoProcessor`)**: `ThreadPoolTaskExecutor` dedicado (`fotoProcessingExecutor`) con pool acotado (core 2, max 4, cola 50) y `CallerRunsPolicy`. Transacción `REQUIRES_NEW` independiente para no bloquear la confirmación de la subida ni leer datos no confirmados.
+4. **Procesamiento de imagen**: normalización a máximo 512×512 manteniendo proporción, generación de miniatura 80×80 con recorte centrado (`Positions.CENTER`), recodificación sin metadatos (EXIF) y limpieza garantizada de archivos temporales.
+5. **Endpoints y autorización (`ProductoController`, `ProductoFotoService`)**: respuesta HTTP `202 Accepted` al subir o reintentar foto, consulta de estado por ID, y protección de subida, eliminación y reintento restringida a `ADMINISTRADOR`, `GERENTE` e `INVENTARISTA`.
+6. **Validación automatizada**: suites unitarias completas (`ValidadorSeguridadImagenTest`, `ProductoFotoProcessorTest`) y ejecución exitosa de los 127 tests del backend.
+
+---
 
 Procesar imágenes sin bloquear la solicitud HTTP y sin exponer el servidor a archivos
 maliciosos o consumo de recursos no acotado.

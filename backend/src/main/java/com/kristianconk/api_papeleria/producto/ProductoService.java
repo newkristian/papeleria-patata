@@ -397,7 +397,10 @@ public class ProductoService {
                 f.getOrden(),
                 f.getFechaSubida(),
                 baseUrl,                    // URL original
-                baseUrl + "?size=200"        // URL thumbnail (tamaño configurable)
+                baseUrl + "?size=200",      // URL thumbnail (tamaño configurable)
+                f.getEstadoProcesamiento(),
+                f.getMensajeError()
         );
     }
 }
+

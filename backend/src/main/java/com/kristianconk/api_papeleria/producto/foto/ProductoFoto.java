@@ -1,5 +1,6 @@
 package com.kristianconk.api_papeleria.producto.foto;
 
+import com.kristianconk.api_papeleria.enums.EstadoProcesamientoFoto;
 import com.kristianconk.api_papeleria.producto.Producto;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -23,8 +24,11 @@ public class ProductoFoto {
     @Column(nullable = false)
     private String nombreArchivo;
 
-    @Column(nullable = false)
+    @Column(length = 1000)
     private String rutaArchivo;
+
+    @Column(length = 1000)
+    private String rutaMiniatura;
 
     @Column(nullable = false)
     private String contentType;
@@ -35,6 +39,13 @@ public class ProductoFoto {
     private Boolean esPrincipal = false;
 
     private Integer orden = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private EstadoProcesamientoFoto estadoProcesamiento = EstadoProcesamientoFoto.COMPLETADO;
+
+    @Column(columnDefinition = "TEXT")
+    private String mensajeError;
 
     @CreationTimestamp
     private LocalDateTime fechaSubida;

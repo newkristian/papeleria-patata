@@ -1,27 +1,27 @@
 package com.kristianconk.api_papeleria.producto.foto;
 
+import com.kristianconk.api_papeleria.enums.EstadoProcesamientoFoto;
 import com.kristianconk.api_papeleria.error.ResourceNotFoundException;
 import com.kristianconk.api_papeleria.producto.Producto;
 import com.kristianconk.api_papeleria.producto.ProductoRepository;
-import com.kristianconk.api_papeleria.storage.ByteArrayMultipartFile;
 import com.kristianconk.api_papeleria.storage.StorageService;
 import com.kristianconk.api_papeleria.usuario.Usuario;
 import lombok.RequiredArgsConstructor;
-import net.coobird.thumbnailator.Thumbnails;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProductoFotoService {
@@ -29,66 +29,73 @@ public class ProductoFotoService {
     private final ProductoFotoRepository fotoRepository;
     private final ProductoRepository productoRepository;
     private final StorageService storageService;
+    private final ValidadorSeguridadImagen validadorSeguridad;
+    private final ProductoFotoProcessor fotoProcessor;
 
     @Value("${app.storage-service.upload-path}")
     private String uploadPath;
 
-    @Value("${app.fotos.thumbnail-size:200}")
+    @Value("${app.fotos.thumbnail-size:80}")
     private int thumbnailSize;
 
     @Transactional
     public ProductoFotoDTO subirFoto(Long productoId, SubirFotoRequest request, Usuario usuario) {
+        log.info("[POS/ProductoFotoService] - SUBIR_FOTO: productoId={}, usuario={}", productoId, usuario != null ? usuario.getUsername() : "anon");
 
         Producto producto = productoRepository.findById(productoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
 
         MultipartFile archivo = request.archivo();
-        String uuid = UUID.randomUUID().toString();
-        String subDirectorio = "productos/" + productoId + "/" + uuid;
 
-        // Validar tipo de archivo
-        String contentType = archivo.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new IllegalArgumentException("Solo se permiten archivos de imagen");
-        }
+        // 1. Validación exhaustiva de seguridad (tamaño 4MB, magic bytes, SVG, dimensiones, descompresión bomb)
+        ValidadorSeguridadImagen.InfoImagenValidada info = validadorSeguridad.validar(archivo);
 
-        // Guardar archivo original
-        String rutaGuardada = storageService.store(archivo, subDirectorio);
-
-        // Generar y guardar thumbnail
+        // 2. Guardar archivo temporal usando UUID del servidor (sin usar nombres proporcionados por cliente)
+        Path tempFile;
         try {
-            generarYGuardarThumbnail(archivo, subDirectorio);
+            tempFile = Files.createTempFile("foto_upload_" + UUID.randomUUID() + "_", "." + info.extension());
+            Files.write(tempFile, info.contenido());
         } catch (IOException e) {
-            throw new RuntimeException("Error al generar thumbnail", e);
+            log.error("[POS/ProductoFotoService] - Error al crear archivo temporal para procesamiento", e);
+            throw new RuntimeException("Error interno al preparar archivo para procesamiento", e);
         }
 
-        // Crear entidad
+        // 3. Crear entidad en estado PENDIENTE
         ProductoFoto foto = new ProductoFoto();
         foto.setProducto(producto);
-        foto.setNombreArchivo(archivo.getOriginalFilename());
-        foto.setRutaArchivo(rutaGuardada);
-        foto.setContentType(contentType);
-        foto.setTamanio(archivo.getSize());
+        foto.setNombreArchivo(info.nombreSanitizado());
+        foto.setRutaArchivo(""); // Se actualizará al completar procesamiento asíncrono
+        foto.setContentType(info.mimeType());
+        foto.setTamanio((long) info.contenido().length);
+        foto.setAncho(info.ancho());
+        foto.setAlto(info.alto());
         foto.setOrden(request.orden() != null ? request.orden() : 0);
         foto.setDescripcion(request.descripcion());
+        foto.setEstadoProcesamiento(EstadoProcesamientoFoto.PENDIENTE);
+        foto.setMensajeError(null);
 
-        // Si es principal, resetear otras principales
+        // Si es principal o es la primera foto
         if (Boolean.TRUE.equals(request.esPrincipal())) {
             fotoRepository.resetPrincipalByProductoId(productoId);
             foto.setEsPrincipal(true);
         } else {
-            // Si no hay principal, esta será la primera
             if (fotoRepository.countByProductoId(productoId) == 0) {
                 foto.setEsPrincipal(true);
+            } else {
+                foto.setEsPrincipal(false);
             }
         }
 
         ProductoFoto fotoGuardada = fotoRepository.save(foto);
+
+        // 4. Encolar procesamiento asíncrono seguro
+        fotoProcessor.procesarFotoAsincrona(fotoGuardada.getId(), tempFile, info.extension());
+
         return mapToDTO(fotoGuardada, productoId);
     }
 
-    @Transactional
-    public void eliminarFoto(Long productoId, Long fotoId, Usuario usuario) {
+    @Transactional(readOnly = true)
+    public ProductoFotoDTO consultarEstadoFoto(Long productoId, Long fotoId) {
         ProductoFoto foto = fotoRepository.findById(fotoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Foto no encontrada"));
 
@@ -96,18 +103,81 @@ public class ProductoFotoService {
             throw new IllegalArgumentException("La foto no pertenece al producto especificado");
         }
 
-        // Eliminar archivos del storage
-        storageService.delete(foto.getRutaArchivo());
+        return mapToDTO(foto, productoId);
+    }
 
-        // Eliminar thumbnail
-        String thumbnailPath = foto.getRutaArchivo().replaceFirst("(\\.[^.]+)$", "_thumbnail$1");
-        try {
-            storageService.delete(thumbnailPath);
-        } catch (Exception e) {
-            // Log error pero continuar
+    @Transactional
+    public ProductoFotoDTO reintentarProcesamiento(Long productoId, Long fotoId, Usuario usuario) {
+        log.info("[POS/ProductoFotoService] - REINTENTAR_FOTO: productoId={}, fotoId={}, usuario={}", productoId, fotoId, usuario != null ? usuario.getUsername() : "anon");
+
+        ProductoFoto foto = fotoRepository.findById(fotoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Foto no encontrada"));
+
+        if (!foto.getProducto().getId().equals(productoId)) {
+            throw new IllegalArgumentException("La foto no pertenece al producto especificado");
         }
 
-        boolean eraPrincipal = foto.getEsPrincipal();
+        if (foto.getEstadoProcesamiento() != EstadoProcesamientoFoto.ERROR) {
+            throw new IllegalStateException("Solo se pueden reintentar fotografías en estado ERROR");
+        }
+
+        // Si ya tenía rutaArchivo existente pero falló, verificar si existe para reintentar
+        if (foto.getRutaArchivo() == null || foto.getRutaArchivo().isBlank()) {
+            throw new IllegalStateException("No existe archivo original almacenado para reintentar. Debe subirse nuevamente.");
+        }
+
+        try {
+            Resource recursoOriginal = storageService.loadAsResource(foto.getRutaArchivo());
+            Path tempFile = Files.createTempFile("foto_retry_" + UUID.randomUUID() + "_", ".tmp");
+            Files.copy(recursoOriginal.getInputStream(), tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            foto.setEstadoProcesamiento(EstadoProcesamientoFoto.PENDIENTE);
+            foto.setMensajeError(null);
+            foto = fotoRepository.save(foto);
+
+            String extension = "jpg";
+            if (foto.getContentType() != null && foto.getContentType().contains("png")) {
+                extension = "png";
+            }
+
+            fotoProcessor.procesarFotoAsincrona(foto.getId(), tempFile, extension);
+            return mapToDTO(foto, productoId);
+        } catch (Exception e) {
+            log.error("[POS/ProductoFotoService] - Error al iniciar reintento para fotoId: {}", fotoId, e);
+            throw new RuntimeException("Error al preparar reintento de procesamiento", e);
+        }
+    }
+
+    @Transactional
+    public void eliminarFoto(Long productoId, Long fotoId, Usuario usuario) {
+        log.info("[POS/ProductoFotoService] - ELIMINAR_FOTO: productoId={}, fotoId={}, usuario={}", productoId, fotoId, usuario != null ? usuario.getUsername() : "anon");
+
+        ProductoFoto foto = fotoRepository.findById(fotoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Foto no encontrada"));
+
+        if (!foto.getProducto().getId().equals(productoId)) {
+            throw new IllegalArgumentException("La foto no pertenece al producto especificado");
+        }
+
+        // Eliminar archivo principal del storage si existe
+        if (foto.getRutaArchivo() != null && !foto.getRutaArchivo().isBlank()) {
+            try {
+                storageService.delete(foto.getRutaArchivo());
+            } catch (Exception e) {
+                log.warn("[POS/ProductoFotoService] - Error al eliminar archivo principal: {}", foto.getRutaArchivo());
+            }
+        }
+
+        // Eliminar miniatura del storage si existe
+        if (foto.getRutaMiniatura() != null && !foto.getRutaMiniatura().isBlank()) {
+            try {
+                storageService.delete(foto.getRutaMiniatura());
+            } catch (Exception e) {
+                log.warn("[POS/ProductoFotoService] - Error al eliminar miniatura: {}", foto.getRutaMiniatura());
+            }
+        }
+
+        boolean eraPrincipal = Boolean.TRUE.equals(foto.getEsPrincipal());
         fotoRepository.delete(foto);
 
         // Si era la principal, asignar otra como principal
@@ -132,6 +202,8 @@ public class ProductoFotoService {
 
     @Transactional
     public ProductoFotoDTO establecerFotoPrincipal(Long productoId, Long fotoId, Usuario usuario) {
+        log.info("[POS/ProductoFotoService] - ESTABLECER_PRINCIPAL: productoId={}, fotoId={}, usuario={}", productoId, fotoId, usuario != null ? usuario.getUsername() : "anon");
+
         ProductoFoto foto = fotoRepository.findById(fotoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Foto no encontrada"));
 
@@ -153,50 +225,20 @@ public class ProductoFotoService {
             throw new IllegalArgumentException("La foto no pertenece al producto especificado");
         }
 
-        String ruta = foto.getRutaArchivo();
-
-        // Si se solicita thumbnail y existe tamaño
-        if (size != null && size > 0) {
-            String thumbnailPath = ruta.replaceFirst("(\\.[^.]+)$", "_thumbnail$1");
+        // Si se solicita tamaño miniatura (<= 100) y tenemos rutaMiniatura
+        if (size != null && size > 0 && size <= 100 && foto.getRutaMiniatura() != null && !foto.getRutaMiniatura().isBlank()) {
             try {
-                return storageService.loadAsResource(thumbnailPath);
+                return storageService.loadAsResource(foto.getRutaMiniatura());
             } catch (Exception e) {
-                // Si no existe thumbnail, devolver original
-                return storageService.loadAsResource(ruta);
+                log.warn("[POS/ProductoFotoService] - No se pudo cargar miniatura, usando original: {}", foto.getRutaMiniatura());
             }
         }
 
-        return storageService.loadAsResource(ruta);
-    }
+        if (foto.getRutaArchivo() == null || foto.getRutaArchivo().isBlank()) {
+            throw new ResourceNotFoundException("La fotografía aún se encuentra en procesamiento o no tiene archivo disponible");
+        }
 
-    private void generarYGuardarThumbnail(MultipartFile archivo, String subDirectorio) throws IOException {
-        BufferedImage imagenOriginal = ImageIO.read(archivo.getInputStream());
-
-        BufferedImage thumbnail = Thumbnails.of(imagenOriginal)
-                .size(thumbnailSize, thumbnailSize)
-                .keepAspectRatio(true)
-                .asBufferedImage();
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        String extension = archivo.getOriginalFilename()
-                .substring(archivo.getOriginalFilename().lastIndexOf(".") + 1);
-
-        ImageIO.write(thumbnail, extension, baos);
-
-        // Crear MultipartFile temporal para el thumbnail
-        String thumbnailNombre = archivo.getOriginalFilename()
-                .replaceFirst("(\\.[^.]+)$", "_thumbnail$1");
-
-        // Usar el mismo storage service pero con el thumbnail
-        // Nota: Necesitarías modificar storageService o crear un método específico
-        MultipartFile thumbnailFile = new ByteArrayMultipartFile(
-                thumbnailNombre,
-                thumbnailNombre,
-                archivo.getContentType(),
-                baos.toByteArray()
-        );
-
-        storageService.store(thumbnailFile, subDirectorio);
+        return storageService.loadAsResource(foto.getRutaArchivo());
     }
 
     private ProductoFotoDTO mapToDTO(ProductoFoto foto, Long productoId) {
@@ -210,7 +252,10 @@ public class ProductoFotoService {
                 foto.getOrden(),
                 foto.getFechaSubida(),
                 baseUrl,
-                baseUrl + "?size=" + thumbnailSize
+                baseUrl + "?size=" + thumbnailSize,
+                foto.getEstadoProcesamiento(),
+                foto.getMensajeError()
         );
     }
 }
+

@@ -6,6 +6,10 @@ spring:
       enabled: true
   application:
     name: pos-system
+  servlet:
+    multipart:
+      max-file-size: 4MB
+      max-request-size: 4MB
   data:
     web:
       pageable:
@@ -30,8 +34,8 @@ app:
     upload-path: ./upload-dir
   fotos:
     thumbnail-size: 200
-    max-size: 5MB
-    allowed-types: image/jpeg,image/png,image/gif,image/webp
+    max-size: 4MB
+    allowed-types: image/jpeg,image/png,image/webp
     thumbnail:
       listado-size: 100    # Tamaño para thumbnails en listados
       detalle-size: 200    # Tamaño para thumbnails en detalle
