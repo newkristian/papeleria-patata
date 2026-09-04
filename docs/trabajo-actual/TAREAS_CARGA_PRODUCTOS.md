@@ -425,9 +425,19 @@ maliciosos o consumo de recursos no acotado.
 
 ## Tarea 7 — Exponer sesión y permisos al frontend
 
-**Estado:** Pendiente
+**Estado:** Completada (4 de septiembre de 2026)
 
-### Objetivo
+Se expuso la sesión y permisos de forma segura y reactiva entre backend y frontend:
+1. **Endpoint seguro de perfil en backend (`UsuarioPerfilDTO`, `UsuarioController`)**: Se implementó `GET /api/v1/usuarios/perfil` que entrega el perfil mínimo necesario (`id`, `username`, `nombre`, `apellidos`, `email`, `rol`, `tiendaId`, `tiendaNombre`) sin exponer datos confidenciales ni hashes de contraseñas.
+2. **Modelado y estado reactivo mediante Signals (`AuthService`, `usuario-sesion.model.ts`)**: Modelado estricto con `RolUsuario` (`ADMINISTRADOR`, `GERENTE`, `INVENTARISTA`, `VENDEDOR`) y `UsuarioSesion`. Signals reactivos (`currentUser`, `userRole`, `isAdmin`, `isGerente`, `isInventarista`, `isVendedor`, y métodos de evaluación como `canAccessAdmin()`, `canManageProducts()`, `canManageProviders()`, `canDeactivateProviders()`, `canManageUsers()`).
+3. **Flujo de login y persistencia desacoplada**: `AuthService.login()` autentica y encadena la carga del perfil vía `GET /api/v1/usuarios/perfil`. Almacenamiento seguro en `sessionStorage` y limpieza exhaustiva en `logout()`.
+4. **Protección de rutas por roles (`roleGuard`)**: Guard funcional que verifica roles requeridos, redirigiendo a `/login` si no está autenticado o a `/pos` si el rol no tiene acceso al área requerida.
+5. **Interceptor de errores HTTP centralizado (`errorInterceptor`)**: Captura errores `401 Unauthorized` de peticiones autenticadas para forzar el logout y redirección inmediata a `/login` sin afectar la pantalla de login. Registrado en `app.config.ts`.
+6. **Verificación automatizada**:
+   - Backend: Prueba de integración en `SemanticaInventarioIntegrationTest` validando `GET /api/v1/usuarios/perfil` para distintos roles y rechazo anónimo (128 tests pasando exitosamente).
+   - Frontend: 33 tests pasando exitosamente (`auth.service.spec.ts`, `role.guard.spec.ts`, `error.interceptor.spec.ts`, etc.) y build de producción limpio sin errores (`ng build`).
+
+---
 
 Permitir navegación administrativa coherente con la autorización real del backend.
 

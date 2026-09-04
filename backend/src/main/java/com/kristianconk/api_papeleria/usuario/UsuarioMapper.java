@@ -59,4 +59,22 @@ public class UsuarioMapper {
             usuario.setTienda(tienda);
         }
     }
+
+    public static UsuarioPerfilDTO toPerfilDto(final Usuario usuario) {
+        if (usuario == null) {
+            return null;
+        }
+        return new UsuarioPerfilDTO(
+                usuario.getId(),
+                usuario.getUsername(),
+                usuario.getNombre(),
+                usuario.getApellidos(),
+                usuario.getEmail(),
+                usuario.getRol(),
+                usuario.getTienda() != null ? usuario.getTienda().getId() : null,
+                usuario.getTienda() != null ? usuario.getTienda().getNombre() : null
+        );
+    }
 }
+
+

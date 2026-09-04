@@ -10,6 +10,7 @@ import com.kristianconk.api_papeleria.inventario.InventarioMovimientoRequestDTO;
 import com.kristianconk.api_papeleria.producto.ProductoCrearRequestDTO;
 import com.kristianconk.api_papeleria.producto.ProductoDetalleDTO;
 import com.kristianconk.api_papeleria.usuario.UsuarioCreateRequestDTO;
+import com.kristianconk.api_papeleria.usuario.UsuarioPerfilDTO;
 import com.kristianconk.api_papeleria.usuario.UsuarioResponseDTO;
 import com.kristianconk.api_papeleria.ventas.DetalleVentaRequestDTO;
 import com.kristianconk.api_papeleria.ventas.VentaRequestDTO;
@@ -159,4 +160,28 @@ public class SemanticaInventarioIntegrationTest {
         assertEquals(HttpStatus.BAD_REQUEST, ventaExcesivaResp.getStatusCode());
         assertTrue(ventaExcesivaResp.getBody().mensaje().contains("Stock insuficiente"));
     }
+
+    @Test
+    void consultarPerfil_retornaDatosMinimosSegurosPorUsuarioAutenticado() {
+        // Admin
+        final ResponseEntity<UsuarioPerfilDTO> adminPerfil = get("/api/v1/usuarios/perfil", adminToken, UsuarioPerfilDTO.class);
+        assertEquals(HttpStatus.OK, adminPerfil.getStatusCode());
+        assertNotNull(adminPerfil.getBody());
+        assertEquals("admin@pos.com", adminPerfil.getBody().username());
+        assertEquals(RolUsuario.ADMINISTRADOR, adminPerfil.getBody().rol());
+        assertNotNull(adminPerfil.getBody().nombre());
+
+        // Inventarista
+        final ResponseEntity<UsuarioPerfilDTO> invPerfil = get("/api/v1/usuarios/perfil", inventaristaToken, UsuarioPerfilDTO.class);
+        assertEquals(HttpStatus.OK, invPerfil.getStatusCode());
+        assertNotNull(invPerfil.getBody());
+        assertEquals("inventario.it@pos.com", invPerfil.getBody().username());
+        assertEquals(RolUsuario.INVENTARISTA, invPerfil.getBody().rol());
+        assertEquals("Luis", invPerfil.getBody().nombre());
+
+        // Sin autenticación
+        final ResponseEntity<String> anonPerfil = get("/api/v1/usuarios/perfil", null, String.class);
+        assertTrue(anonPerfil.getStatusCode() == HttpStatus.UNAUTHORIZED || anonPerfil.getStatusCode() == HttpStatus.FORBIDDEN);
+    }
 }
+

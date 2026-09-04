@@ -29,6 +29,16 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
+    @GetMapping("/perfil")
+    @Operation(summary = "Obtener perfil del usuario autenticado actual")
+    public ResponseEntity<UsuarioPerfilDTO> obtenerPerfil(final Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        final UsuarioPerfilDTO perfil = usuarioService.obtenerPerfilPorUsername(principal.getName());
+        return ResponseEntity.ok(perfil);
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Listar todos los usuarios (Solo ADMINISTRADOR)")
@@ -36,6 +46,7 @@ public class UsuarioController {
         final List<UsuarioResponseDTO> usuarios = usuarioService.obtenerTodos();
         return ResponseEntity.ok(usuarios);
     }
+
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")

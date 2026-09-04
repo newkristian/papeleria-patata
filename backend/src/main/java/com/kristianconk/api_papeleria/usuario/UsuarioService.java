@@ -46,6 +46,22 @@ public class UsuarioService {
         return UsuarioMapper.toDto(usuario);
     }
 
+    @Transactional(readOnly = true)
+    public UsuarioPerfilDTO obtenerPerfilPorUsername(final String username) {
+        log.info("[POS/UsuarioService] - OBTENER_PERFIL: buscando perfil de usuario: {}", username);
+        if (username == null || username.isBlank()) {
+            log.error("[POS/UsuarioService] - OBTENER_PERFIL: username es nulo o vacío");
+            throw new IllegalArgumentException("El username no puede ser nulo o vacío");
+        }
+        final Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> {
+                    log.error("[POS/UsuarioService] - OBTENER_PERFIL: usuario '{}' no encontrado", username);
+                    return new ResourceNotFoundException("Usuario no encontrado");
+                });
+        return UsuarioMapper.toPerfilDto(usuario);
+    }
+
+
     public UsuarioResponseDTO crear(final UsuarioCreateRequestDTO request) {
         log.info("[POS/UsuarioService] - CREAR: creando nuevo usuario con email: {}", request.email());
         if (usuarioRepository.existsByEmail(request.email())) {
