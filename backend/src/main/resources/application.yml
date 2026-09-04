@@ -23,9 +23,9 @@ spring:
     out-of-order: false
 app:
   jwt:
-    secret: ${JWT_SECRET:Ptt-k@uuaii-JWT-S3cr3t-K3y-256-b1ts-M1n1mum!}
+    secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:3600000}
-    refresh-expiration: ${JWT_EXPIRATION:86400000}
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:86400000}
   storage-service:
     upload-path: ./upload-dir
   fotos:

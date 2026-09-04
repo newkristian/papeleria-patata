@@ -16,3 +16,7 @@ spring:
     user:
       name: user
       password: password
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:Ptt-k@uuaii-JWT-S3cr3t-K3y-256-b1ts-M1n1mum!}
