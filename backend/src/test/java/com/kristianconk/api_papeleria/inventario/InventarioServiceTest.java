@@ -65,7 +65,7 @@ class InventarioServiceTest {
         final InventarioMovimientoRequestDTO request = new InventarioMovimientoRequestDTO(
                 10L, 10, "Compra proveedores julio", new BigDecimal("25.00"));
 
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(productoMock));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(productoMock));
         when(inventarioMovimientoRepository.save(any(InventarioMovimiento.class))).thenAnswer(invocation -> {
             final InventarioMovimiento mov = invocation.getArgument(0);
             mov.setId(100L);
@@ -99,7 +99,7 @@ class InventarioServiceTest {
         final InventarioMovimientoRequestDTO request = new InventarioMovimientoRequestDTO(
                 10L, 15, "Compra barata liquidación", new BigDecimal("18.00"));
 
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(productoMock));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(productoMock));
         when(inventarioMovimientoRepository.save(any(InventarioMovimiento.class))).thenAnswer(invocation -> {
             final InventarioMovimiento mov = invocation.getArgument(0);
             mov.setId(101L);
@@ -144,7 +144,7 @@ class InventarioServiceTest {
         final InventarioMovimientoRequestDTO request = new InventarioMovimientoRequestDTO(
                 10L, 3, "Merma por daño", null);
 
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(productoMock));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(productoMock));
         when(inventarioMovimientoRepository.save(any(InventarioMovimiento.class))).thenAnswer(invocation -> {
             final InventarioMovimiento mov = invocation.getArgument(0);
             mov.setId(102L);
@@ -175,7 +175,7 @@ class InventarioServiceTest {
         final InventarioMovimientoRequestDTO request = new InventarioMovimientoRequestDTO(
                 10L, 6, "Merma por daño", null);
 
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(productoMock));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(productoMock));
 
         // When & Then
         assertThrows(IllegalArgumentException.class, () -> 
@@ -185,4 +185,35 @@ class InventarioServiceTest {
         verify(productoRepository, never()).save(any(Producto.class));
         verifyNoInteractions(inventarioMovimientoRepository);
     }
+
+    @Test
+    void registrarEntrada_cantidadDesconocida_rechazaEntradaRelativa() {
+        productoMock.setCantidadDesconocida(true);
+        final InventarioMovimientoRequestDTO request = new InventarioMovimientoRequestDTO(
+                10L, 10, "Entrada invalida", new BigDecimal("20.00"));
+
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(productoMock));
+
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> inventarioService.registrarEntrada(request, usuarioInventarista));
+
+        assertTrue(ex.getMessage().contains("cantidad desconocida"));
+        verify(productoRepository, never()).save(any(Producto.class));
+    }
+
+    @Test
+    void registrarSalida_cantidadDesconocida_rechazaSalidaRelativa() {
+        productoMock.setCantidadDesconocida(true);
+        final InventarioMovimientoRequestDTO request = new InventarioMovimientoRequestDTO(
+                10L, 2, "Salida invalida", null);
+
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(productoMock));
+
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> inventarioService.registrarSalida(request, usuarioInventarista));
+
+        assertTrue(ex.getMessage().contains("cantidad desconocida"));
+        verify(productoRepository, never()).save(any(Producto.class));
+    }
 }
+

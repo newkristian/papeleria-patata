@@ -38,7 +38,7 @@ public class InventarioService {
 
         verificarPermisos(usuario, "registrar entrada");
 
-        final Producto producto = productoRepository.findById(request.productoId())
+        final Producto producto = productoRepository.findByIdForUpdate(request.productoId())
                 .orElseThrow(() -> {
                     log.error("[POS/InventarioService] - REGISTRAR_ENTRADA: productoId: {} no encontrado, userId: {}", request.productoId(), usuario.getId());
                     return new ResourceNotFoundException("Producto no encontrado");
@@ -47,6 +47,11 @@ public class InventarioService {
         if (!producto.isActivo()) {
             log.error("[POS/InventarioService] - REGISTRAR_ENTRADA: productoId: {} no activo, userId: {}", request.productoId(), usuario.getId());
             throw new IllegalArgumentException("El producto no está activo");
+        }
+
+        if (producto.isCantidadDesconocida()) {
+            log.error("[POS/InventarioService] - REGISTRAR_ENTRADA: productoId: {} tiene cantidad desconocida, userId: {}", request.productoId(), usuario.getId());
+            throw new IllegalArgumentException("No se pueden registrar entradas relativas para un producto con cantidad desconocida. Realice primero un ajuste absoluto de inventario.");
         }
 
         // Actualizar stock
@@ -82,7 +87,7 @@ public class InventarioService {
 
         verificarPermisos(usuario, "registrar salida");
 
-        final Producto producto = productoRepository.findById(request.productoId())
+        final Producto producto = productoRepository.findByIdForUpdate(request.productoId())
                 .orElseThrow(() -> {
                     log.error("[POS/InventarioService] - REGISTRAR_SALIDA: productoId: {} no encontrado, userId: {}", request.productoId(), usuario.getId());
                     return new ResourceNotFoundException("Producto no encontrado");
@@ -93,7 +98,12 @@ public class InventarioService {
             throw new IllegalArgumentException("El producto no está activo");
         }
 
-        if (!producto.isCantidadDesconocida() && producto.getStockActual() < request.cantidad()) {
+        if (producto.isCantidadDesconocida()) {
+            log.error("[POS/InventarioService] - REGISTRAR_SALIDA: productoId: {} tiene cantidad desconocida, userId: {}", request.productoId(), usuario.getId());
+            throw new IllegalArgumentException("No se pueden registrar salidas relativas para un producto con cantidad desconocida. Realice primero un ajuste absoluto de inventario.");
+        }
+
+        if (producto.getStockActual() < request.cantidad()) {
             log.error("[POS/InventarioService] - REGISTRAR_SALIDA: stock insuficiente para productoId: {}, stock actual: {}, solicitado: {}, userId: {}", 
                     request.productoId(), producto.getStockActual(), request.cantidad(), usuario.getId());
             throw new IllegalArgumentException("Stock insuficiente para realizar la salida (Stock actual: " + producto.getStockActual() + ")");

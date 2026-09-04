@@ -119,9 +119,9 @@ public class VentaService {
             final Long productoId = entrada.getKey();
             final int cantidadTotal = entrada.getValue();
 
-            // Se vuelve a leer el producto desde persistencia (nunca desde el request)
-            // para obtener precio, stock y datos vigentes dentro de esta transacción.
-            final Producto producto = productoRepository.findById(productoId)
+            // Se vuelve a leer el producto con bloqueo pesimista desde persistencia
+            // (nunca desde el request) para obtener precio, stock y datos vigentes.
+            final Producto producto = productoRepository.findByIdForUpdate(productoId)
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Producto no encontrado con ID: " + productoId));
 
@@ -135,16 +135,17 @@ public class VentaService {
                         "El producto " + producto.getNombre() + " no tiene un precio de venta válido");
             }
 
-            if (!producto.isCantidadDesconocida() && producto.getStockActual() < cantidadTotal) {
-                throw new IllegalArgumentException("Stock insuficiente para el producto: " + producto.getNombre()
-                        + " (Stock actual: " + producto.getStockActual() + ", solicitado: " + cantidadTotal + ")");
+            if (!producto.isCantidadDesconocida()) {
+                if (producto.getStockActual() < cantidadTotal) {
+                    throw new IllegalArgumentException("Stock insuficiente para el producto: " + producto.getNombre()
+                            + " (Stock actual: " + producto.getStockActual() + ", solicitado: " + cantidadTotal + ")");
+                }
+                // Si cualquier línea posterior falla (producto inactivo, precio inválido o
+                // stock insuficiente), la transacción de crearVenta hace rollback completo,
+                // incluido este descuento de stock ya aplicado.
+                producto.setStockActual(producto.getStockActual() - cantidadTotal);
+                productoRepository.save(producto);
             }
-
-            // Si cualquier línea posterior falla (producto inactivo, precio inválido o
-            // stock insuficiente), la transacción de crearVenta hace rollback completo,
-            // incluido este descuento de stock ya aplicado.
-            producto.setStockActual(producto.getStockActual() - cantidadTotal);
-            productoRepository.save(producto);
 
             // Fotografía histórica de la línea: precio de lista, tipo/porcentaje/monto
             // de descuento, precio final y subtotal quedan fijos aquí y ya no cambian

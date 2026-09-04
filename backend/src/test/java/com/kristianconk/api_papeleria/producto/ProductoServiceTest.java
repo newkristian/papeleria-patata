@@ -5,6 +5,7 @@ import com.kristianconk.api_papeleria.categoria.CategoriaRepository;
 import com.kristianconk.api_papeleria.enums.RolUsuario;
 import com.kristianconk.api_papeleria.error.AccesoDenegadoException;
 import com.kristianconk.api_papeleria.error.ConflictException;
+import com.kristianconk.api_papeleria.inventario.AjusteInventarioDTO;
 import com.kristianconk.api_papeleria.inventario.InventarioMovimientoRepository;
 import com.kristianconk.api_papeleria.proveedor.Proveedor;
 import com.kristianconk.api_papeleria.proveedor.ProveedorPendienteService;
@@ -25,6 +26,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -226,6 +228,57 @@ class ProductoServiceTest {
 
         verify(productoRepository).buscarProductos(
                 null, null, null, true, null, null, false, pageable);
+    }
+
+    @Test
+    void ajustarInventario_absolutoCero_fijaStockYApagaCantidadDesconocida() {
+        final Producto producto = producto(10L, proveedor);
+        producto.setCantidadDesconocida(true);
+        producto.setStockActual(0);
+
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.save(producto)).thenReturn(producto);
+
+        final AjusteInventarioDTO ajuste = new AjusteInventarioDTO(10L, 0, "Conteo inicial cero", null, true);
+        final ProductoDetalleDTO resultado = productoService.ajustarInventario(ajuste, usuario(RolUsuario.INVENTARISTA));
+
+        assertNotNull(resultado);
+        assertFalse(producto.isCantidadDesconocida());
+        assertEquals(0, producto.getStockActual());
+        verify(inventarioMovimientoRepository).save(any());
+    }
+
+    @Test
+    void ajustarInventario_absolutoNegativo_lanzaExcepcion() {
+        final Producto producto = producto(10L, proveedor);
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
+
+        final AjusteInventarioDTO ajuste = new AjusteInventarioDTO(10L, -5, "Ajuste negativo invalido", null, true);
+        assertThrows(IllegalArgumentException.class, () -> productoService.ajustarInventario(ajuste, usuario(RolUsuario.INVENTARISTA)));
+    }
+
+    @Test
+    void ajustarInventario_relativoConCantidadDesconocida_lanzaExcepcion() {
+        final Producto producto = producto(10L, proveedor);
+        producto.setCantidadDesconocida(true);
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
+
+        final AjusteInventarioDTO ajuste = new AjusteInventarioDTO(10L, 5, "Ajuste relativo invalido", null, false);
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> productoService.ajustarInventario(ajuste, usuario(RolUsuario.INVENTARISTA)));
+
+        assertTrue(ex.getMessage().contains("cantidad desconocida"));
+    }
+
+    @Test
+    void ajustarInventario_relativoResultaEnStockNegativo_lanzaExcepcion() {
+        final Producto producto = producto(10L, proveedor);
+        producto.setStockActual(3);
+        producto.setCantidadDesconocida(false);
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
+
+        final AjusteInventarioDTO ajuste = new AjusteInventarioDTO(10L, -5, "Ajuste resulta en negativo", null, false);
+        assertThrows(IllegalArgumentException.class, () -> productoService.ajustarInventario(ajuste, usuario(RolUsuario.INVENTARISTA)));
     }
 
     private ProductoCrearRequestDTO crearRequest(final Long proveedorId, final Boolean cantidadDesconocida) {

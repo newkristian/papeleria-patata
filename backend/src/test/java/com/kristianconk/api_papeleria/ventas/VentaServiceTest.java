@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -112,7 +113,7 @@ class VentaServiceTest {
 
         when(folioGenerador.generarFolio()).thenReturn("V-0001");
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteAnonimo));
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
         when(motorPromocionesService.evaluar(eq(producto), eq(2), isNull(), any(LocalDateTime.class)))
                 .thenReturn(sinPromocion(new BigDecimal("60.00")));
         when(ventaRepository.save(any(Venta.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -150,7 +151,7 @@ class VentaServiceTest {
 
         when(folioGenerador.generarFolio()).thenReturn("V-0002");
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteAnonimo));
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
 
         assertThrows(IllegalStateException.class, () -> ventaService.crearVenta(request, vendedor));
 
@@ -168,7 +169,7 @@ class VentaServiceTest {
 
         when(folioGenerador.generarFolio()).thenReturn("V-0004");
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteAnonimo));
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
 
         assertThrows(IllegalArgumentException.class, () -> ventaService.crearVenta(request, vendedor));
 
@@ -192,7 +193,7 @@ class VentaServiceTest {
 
         when(folioGenerador.generarFolio()).thenReturn("V-0003");
         when(clienteRepository.findById(2L)).thenReturn(Optional.of(cliente));
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
         when(motorPromocionesService.evaluar(eq(producto), eq(2), eq(cliente), any(LocalDateTime.class)))
                 .thenReturn(sinPromocion(new BigDecimal("60.00")));
         when(ventaRepository.save(any(Venta.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -216,7 +217,7 @@ class VentaServiceTest {
 
         when(folioGenerador.generarFolio()).thenReturn("V-0005");
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteAnonimo));
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
         when(motorPromocionesService.evaluar(eq(producto), eq(2), isNull(), any(LocalDateTime.class)))
                 .thenReturn(sinPromocion(new BigDecimal("60.00")));
         when(ventaRepository.save(any(Venta.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -237,7 +238,7 @@ class VentaServiceTest {
 
         when(folioGenerador.generarFolio()).thenReturn("V-0006");
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteAnonimo));
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
         when(motorPromocionesService.evaluar(eq(producto), eq(10), isNull(), any(LocalDateTime.class)))
                 .thenReturn(sinPromocion(new BigDecimal("300.00")));
         when(ventaRepository.save(any(Venta.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -268,7 +269,7 @@ class VentaServiceTest {
 
         when(folioGenerador.generarFolio()).thenReturn("V-0007");
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteAnonimo));
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
         when(motorPromocionesService.evaluar(eq(producto), eq(10), isNull(), any(LocalDateTime.class)))
                 .thenReturn(resultadoPromocion);
         when(promocionRepository.getReferenceById(7L)).thenReturn(promocionCantidad);
@@ -312,7 +313,7 @@ class VentaServiceTest {
 
         when(folioGenerador.generarFolio()).thenReturn("V-0008");
         when(clienteRepository.findById(2L)).thenReturn(Optional.of(cliente));
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
         when(motorPromocionesService.evaluar(eq(producto), eq(2), eq(cliente), any(LocalDateTime.class)))
                 .thenReturn(resultadoPromocion);
         when(promocionClienteRepository.getReferenceById(3L)).thenReturn(promocionCliente);
@@ -351,7 +352,7 @@ class VentaServiceTest {
 
         when(folioGenerador.generarFolio()).thenReturn("V-0009");
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteAnonimo));
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
         when(autorizacionDescuentoService.consumir("referencia-opaca", producto, 2, vendedor, "carrito-1"))
                 .thenReturn(autorizacionManual(gerente, new BigDecimal("15.00")));
         when(ventaRepository.save(any(Venta.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -382,7 +383,7 @@ class VentaServiceTest {
 
         when(folioGenerador.generarFolio()).thenReturn("V-0010");
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteAnonimo));
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
         when(autorizacionDescuentoService.consumir("referencia-vencida", producto, 2, vendedor, "carrito-1"))
                 .thenThrow(new IllegalArgumentException("La autorización de descuento manual es inválida, expiró o "
                         + "ya fue utilizada"));
@@ -404,7 +405,7 @@ class VentaServiceTest {
 
         when(folioGenerador.generarFolio()).thenReturn("V-0011");
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteAnonimo));
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
 
         assertThrows(IllegalArgumentException.class, () -> ventaService.crearVenta(request, vendedor));
 
@@ -496,4 +497,34 @@ class VentaServiceTest {
 
         assertEquals(2, resultado.size());
     }
+
+    @Test
+    void crearVenta_productoCantidadDesconocida_noValidaNiDescuentaStock() {
+        final Producto productoDesconocido = new Producto();
+        productoDesconocido.setId(20L);
+        productoDesconocido.setNombre("Producto Sin Inventariar");
+        productoDesconocido.setActivo(true);
+        productoDesconocido.setStockActual(0); // Stock en 0, pero cantidad desconocida = true
+        productoDesconocido.setCantidadDesconocida(true);
+        productoDesconocido.setPrecioVenta(new BigDecimal("15.00"));
+
+        final VentaRequestDTO request = new VentaRequestDTO(
+                null,
+                MetodoPago.EFECTIVO,
+                List.of(new DetalleVentaRequestDTO(20L, 5)));
+
+        when(folioGenerador.generarFolio()).thenReturn("V-0020");
+        when(clienteRepository.findById(1L)).thenReturn(Optional.of(clienteAnonimo));
+        when(productoRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(productoDesconocido));
+        when(motorPromocionesService.evaluar(eq(productoDesconocido), eq(5), isNull(), any(LocalDateTime.class)))
+                .thenReturn(sinPromocion(new BigDecimal("75.00")));
+        when(ventaRepository.save(any(Venta.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        final Venta resultado = ventaService.crearVenta(request, vendedor);
+
+        assertNotNull(resultado);
+        assertEquals(0, productoDesconocido.getStockActual()); // Stock sigue en 0 sin modificar
+        verify(productoRepository, never()).save(productoDesconocido);
+    }
 }
+

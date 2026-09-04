@@ -153,10 +153,28 @@ public class ProductoService {
             throw new AccesoDenegadoException("No tiene permisos para ajustar inventario");
         }
 
-        Producto producto = productoRepository.findById(ajuste.productoId())
+        Producto producto = productoRepository.findByIdForUpdate(ajuste.productoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
         if (!producto.isActivo()) {
             throw new ConflictException("No se puede ajustar inventario de un producto inactivo");
+        }
+
+        // Actualizar stock y validar semántica de inventario desconocido
+        if (Boolean.TRUE.equals(ajuste.esFijarStockAbsoluto())) {
+            if (ajuste.cantidad() < 0) {
+                throw new IllegalArgumentException("El stock absoluto no puede ser negativo");
+            }
+            producto.setStockActual(ajuste.cantidad());
+            producto.setCantidadDesconocida(false);
+        } else {
+            if (producto.isCantidadDesconocida()) {
+                throw new IllegalArgumentException("No se pueden realizar ajustes relativos en un producto con cantidad desconocida. Realice primero un ajuste absoluto de inventario.");
+            }
+            final int stockResultante = producto.getStockActual() + ajuste.cantidad();
+            if (stockResultante < 0) {
+                throw new IllegalArgumentException("El ajuste relativo resulta en un stock negativo no permitido");
+            }
+            producto.setStockActual(stockResultante);
         }
 
         // Registrar movimiento de inventario
@@ -172,14 +190,6 @@ public class ProductoService {
         if (ajuste.nuevoCostoCompra() != null) {
             producto.setCostoCompra(ajuste.nuevoCostoCompra());
             producto.setPorcentajeGanancia(calcularPorcentajeGanancia(ajuste.nuevoCostoCompra()));
-        }
-
-        // Actualizar stock
-        if (Boolean.TRUE.equals(ajuste.esFijarStockAbsoluto())) {
-            producto.setStockActual(ajuste.cantidad());
-            producto.setCantidadDesconocida(false);
-        } else {
-            producto.setStockActual(producto.getStockActual() + ajuste.cantidad());
         }
 
         inventarioMovimientoRepository.save(movimiento);
