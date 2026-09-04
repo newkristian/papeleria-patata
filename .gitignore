@@ -1,0 +1,27 @@
+# --- Secretos y Entorno ---
+.env
+.env.*
+!.env.example
+
+# --- Archivos de sistema ---
+.DS_Store
+Thumbs.db
+
+# --- IDEs y Editores ---
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- Archivos de compilación y dependencias ---
+target/
+**/target/
+dist/
+**/dist/
+node_modules/
+**/node_modules/
+.angular/
+**/.angular/
+
+# --- Datos de ejecución local ---
+backend/upload-dir/
