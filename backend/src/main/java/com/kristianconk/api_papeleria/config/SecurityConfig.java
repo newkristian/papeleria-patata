@@ -43,6 +43,7 @@ public class SecurityConfig {
                                               // están separados
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v*/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         // Jerarquía de roles para el POS
                         // Admin: acceso total a productos y usuarios
                         .requestMatchers("/api/v*/admin/**").hasRole("ADMINISTRADOR")
