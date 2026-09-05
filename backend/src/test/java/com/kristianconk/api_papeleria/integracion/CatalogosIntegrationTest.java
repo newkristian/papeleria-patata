@@ -257,6 +257,19 @@ class CatalogosIntegrationTest {
     }
 
     @Test
+    void buscarProductosSinTerminoYConFiltros() {
+        // Buscar sin término (solo paginación)
+        final ResponseEntity<String> sinTermino =
+                get("/api/v1/productos/buscar?page=0&size=20", adminToken, String.class);
+        assertEquals(HttpStatus.OK, sinTermino.getStatusCode());
+
+        // Buscar con filtro de categoría y stock bajo
+        final ResponseEntity<String> conFiltros =
+                get("/api/v1/productos/buscar?categoriaId=1&soloStockBajo=true&page=0&size=10", gerenteToken, String.class);
+        assertEquals(HttpStatus.OK, conFiltros.getStatusCode());
+    }
+
+    @Test
     void permisosDeCatalogosRechazanRolesNoAutorizados() {
         final CategoriaRequestDTO categoria = new CategoriaRequestDTO("Sin permiso", null);
         assertEquals(HttpStatus.FORBIDDEN,

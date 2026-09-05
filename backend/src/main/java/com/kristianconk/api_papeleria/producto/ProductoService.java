@@ -206,8 +206,11 @@ public class ProductoService {
         final Boolean activo = usuario.getRol() == RolUsuario.VENDEDOR || busqueda.activo() == null
                 ? Boolean.TRUE
                 : busqueda.activo();
+        final String patron = (busqueda.termino() == null || busqueda.termino().isBlank())
+                ? null
+                : "%" + busqueda.termino().trim().toLowerCase() + "%";
         final Page<Producto> productos = productoRepository.buscarProductos(
-                busqueda.termino(),
+                patron,
                 busqueda.categoriaId(),
                 busqueda.proveedorId(),
                 activo,

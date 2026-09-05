@@ -563,7 +563,34 @@ estado de proveedor pendiente.
 
 ## Tarea 10 — Catálogo y formulario de productos
 
-**Estado:** Pendiente
+**Estado:** Completada (4 de septiembre de 2026)
+
+Se implementó y verificó de forma integral el catálogo y formulario de productos en el área administrativa, conectado con contratos verificados del backend:
+1. **Modelos y contratos (`producto.model.ts`)**:
+   - Modelado completo de `ProductoDetalle`, `ProductoCrearRequest`, `ProductoActualizarRequest`, `ProductoFiltros`, `ProductoListado` y `Pagina<T>`.
+2. **Servicio HTTP frontend (`ProductoService`)**:
+   - Métodos `buscarAvanzado` (filtros combinados por término, categoría, proveedor, estado y stock bajo), `obtenerPorId`, `crear`, `actualizar`, `desactivar` y `reactivar`.
+   - Pruebas unitarias completas en `producto.service.spec.ts` (9 tests pasando con 100% de cobertura de métodos).
+3. **Robustez y compatibilidad de consultas backend (`ProductoRepository`, `ProductoService`)**:
+   - Se ajustó `buscarProductos` para recibir un `:patron` preformateado en minúsculas con comodines en lugar de ejecutar `LOWER(CONCAT('%', :termino, '%'))`, garantizando compatibilidad total con PostgreSQL y eliminando fallos 500 (`lower(bytea)`) cuando `termino` no viene informado.
+   - Nueva prueba de integración en `CatalogosIntegrationTest` validando búsquedas sin término y con filtros combinados contra PostgreSQL real en Testcontainers.
+4. **Componente de administración de catálogo (`ProductosAdminComponent`)**:
+   - Listado responsivo con tarjetas/tabla paginada: foto/miniatura, código de barras, nombre, categoría, proveedor (o badge `PENDIENTE`), precio de venta oficial del backend, existencia (con badge "Por contar" para productos con `cantidadDesconocida = true` y alerta de stock bajo cuando `stockActual <= stockMinimo`), y estado activo/inactivo.
+   - Filtros combinados: búsqueda por texto/código, categoría, proveedor, estado (activos, inactivos, todos) y condición de inventario (todos, stock bajo, por contar).
+   - Formulario modal de alta y edición con validaciones reactivas estrictas:
+     - Código de barras normalizado en mayúsculas (regex `^[A-Za-z0-9._-]+$`).
+     - Categoría obligatoria con selector alimentado por `CategoriaService`.
+     - Proveedor opcional en la interfaz; si no se selecciona, el backend asigna automáticamente el proveedor del sistema `PENDIENTE`.
+     - Costo de compra validado (> 0 con precisión decimal).
+     - Margen de ganancia manual editable para `ADMINISTRADOR` y `GERENTE`, y bloqueado informativamente para `INVENTARISTA` (calculado por escala del sistema).
+     - Opción explícita "Cantidad aún no contabilizada" (`cantidadDesconocida = true`) sin pedir existencia inicial.
+     - Indicador informativo de que el precio de venta es calculado de forma fidedigna por el backend.
+   - Diálogo de confirmación para desactivación y reactivación segura conforme a la matriz de permisos (`ADMINISTRADOR` y `GERENTE`).
+5. **Rutas e Integración**:
+   - Ruta `/admin/productos` conectada a `ProductosAdminComponent` en `app.routes.ts`.
+6. **Verificación y Pruebas**:
+   - Frontend: 16 archivos de prueba y 67 tests unitarios pasando exitosamente (`npm test -- --watch=false`). Build de producción completado con éxito (`chunk-B-gwvvia.js`).
+   - Backend: 130 tests unitarios y de integración pasando sin errores en `./mvnw test`.
 
 ### Objetivo
 

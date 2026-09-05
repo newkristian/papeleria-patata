@@ -28,10 +28,10 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     // Búsqueda avanzada con múltiples criterios
     @Query("SELECT p FROM Producto p WHERE " +
-            "(:termino IS NULL OR :termino = '' OR " +
-            "LOWER(p.nombre) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
-            "LOWER(COALESCE(p.descripcion, '')) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
-            "LOWER(p.codigoBarras) LIKE LOWER(CONCAT('%', :termino, '%'))) AND " +
+            "(:patron IS NULL OR " +
+            "LOWER(p.nombre) LIKE :patron OR " +
+            "LOWER(COALESCE(p.descripcion, '')) LIKE :patron OR " +
+            "LOWER(p.codigoBarras) LIKE :patron) AND " +
             "(:categoriaId IS NULL OR p.categoria.id = :categoriaId) AND " +
             "(:proveedorId IS NULL OR p.proveedor.id = :proveedorId) AND " +
             "(:activo IS NULL OR p.activo = :activo) AND " +
@@ -39,7 +39,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
             "(:precioMax IS NULL OR p.precioVenta <= :precioMax) AND " +
             "(:soloStockBajo = FALSE OR (p.cantidadDesconocida = FALSE AND p.stockActual <= p.stockMinimo))")
     Page<Producto> buscarProductos(
-            @Param("termino") String termino,
+            @Param("patron") String patron,
             @Param("categoriaId") Long categoriaId,
             @Param("proveedorId") Long proveedorId,
             @Param("activo") Boolean activo,

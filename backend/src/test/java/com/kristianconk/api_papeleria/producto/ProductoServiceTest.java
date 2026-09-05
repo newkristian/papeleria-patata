@@ -207,13 +207,13 @@ class ProductoServiceTest {
         final PageRequest pageable = PageRequest.of(0, 20);
         final ProductoBusquedaDTO busqueda =
                 new ProductoBusquedaDTO(" lápiz ", null, null, false, null, null, false);
-        when(productoRepository.buscarProductos("lápiz", null, null, true, null, null, false, pageable))
+        when(productoRepository.buscarProductos("%lápiz%", null, null, true, null, null, false, pageable))
                 .thenReturn(new PageImpl<>(List.of(producto(10L, proveedor)), pageable, 1));
 
         productoService.buscarProductos(busqueda, pageable, usuario(RolUsuario.VENDEDOR));
 
         verify(productoRepository).buscarProductos(
-                "lápiz", null, null, true, null, null, false, pageable);
+                "%lápiz%", null, null, true, null, null, false, pageable);
     }
 
     @Test

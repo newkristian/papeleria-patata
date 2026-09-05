@@ -33,8 +33,7 @@ export const routes: Routes = [
       {
         path: 'productos',
         canActivate: [roleGuard(['ADMINISTRADOR', 'GERENTE', 'INVENTARISTA'])],
-        loadComponent: () => import('./features/admin/pages/admin-placeholder.component').then(m => m.AdminPlaceholderComponent),
-        data: { titulo: 'Gestión de Productos y Catálogo', descripcion: 'Catálogo de productos, código de barras y subida segura de fotos.' }
+        loadComponent: () => import('./features/admin/productos/productos-admin.component').then(m => m.ProductosAdminComponent),
       },
       {
         path: 'categorias',
