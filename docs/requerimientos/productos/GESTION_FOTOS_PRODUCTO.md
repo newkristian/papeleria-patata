@@ -1,7 +1,7 @@
 # Gestión de fotografías de producto
 
-**Estado:** En desarrollo
-**Última revisión:** 2 de septiembre de 2026
+**Estado:** Implementado y verificado  
+**Última revisión:** 4 de septiembre de 2026
 
 ## Objetivo
 
@@ -44,19 +44,27 @@ miniaturas seguras.
 
 ## Implementación verificada
 
-- Existen endpoints multipart y un servicio de almacenamiento en filesystem.
-- Se generan y persisten referencias a miniaturas y foto principal.
+- Pipeline asíncrono seguro implementado en `ProductoFotoProcessor` con
+  `ThreadPoolTaskExecutor` de hilos y cola acotados.
+- Subida multipart que responde inmediatamente `202 ACCEPTED` con DTO en estado `PENDIENTE`.
+- Estados persistentes (`PENDIENTE`, `PROCESANDO`, `LISTA`, `ERROR` con mensaje descriptivo).
+- Validación estricta con `ValidadorSeguridadImagen`: comprobación de magic bytes y
+  decodificación real (`BufferedImage`), rechazando SVG ejecutable, WebP, GIFs y
+  archivos hostiles o truncados sin dejar archivos huérfanos.
+- Normalización a 512 × 512 px, generación de miniatura 80 × 80 px y remoción de metadatos EXIF.
+- Eliminación física de archivos en disco al borrar la fotografía y marcado de foto principal.
+- Modal interactivo en frontend (`ProductoFotosModalComponent`, `ProductoFotoService`)
+  con drag & drop, validación cliente de 4 MB y tipo MIME, barra de progreso,
+  polling acotado (1.5s, máximo 15 intentos) con detención automática y recarga reactiva
+  en catálogo de productos.
+- Pruebas unitarias de validador y procesador, y prueba de integración E2E en
+  `FlujoIntegralCargaProductosIntegrationTest`.
 
-## Pendientes conocidos
+## Cierre de pendientes del hito
 
-- Sustituir el procesamiento síncrono por el pipeline asíncrono aprobado.
-- Añadir estado persistente, endpoint de consulta/reintento y configuración acotada
-  del executor.
-- Aplicar límites, validación real del contenido, normalización, eliminación de
-  metadatos y limpieza transaccional de archivos.
-- Aplicar autorización por operación y añadir pruebas de tamaño, formato, dimensiones,
-  IDOR, saturación, acceso y eliminación física.
-- Implementar polling acotado y estados de procesamiento en frontend.
+- **Pipeline asíncrono y executor:** Implementado en Tarea 6.
+- **Validación de seguridad y archivos hostiles:** Implementado en Tarea 6.
+- **Interfaz y polling en frontend:** Implementado en Tarea 11.
 
 ## Dependencia no bloqueante
 

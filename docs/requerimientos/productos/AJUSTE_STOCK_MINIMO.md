@@ -1,7 +1,7 @@
 # Stock mínimo y alerta de existencias
 
-**Estado:** En desarrollo  
-**Última revisión:** 2 de septiembre de 2026
+**Estado:** Implementado y verificado  
+**Última revisión:** 4 de septiembre de 2026
 
 ## Objetivo
 
@@ -22,15 +22,23 @@ reposición.
 
 ## Implementación verificada
 
-- El modelo contiene stock mínimo y existe consulta de productos con stock bajo.
-- Existe ajuste manual de inventario sobre productos.
+- El modelo contiene stock mínimo (entero no negativo) y existe consulta dedicada
+  `GET /api/v1/productos/stock-bajo`.
+- La consulta excluye expresamente productos inactivos y productos con
+  `cantidadDesconocida = true`.
+- Modificación del stock mínimo disponible en alta y edición mediante el formulario
+  de producto, sin alterar las existencias físicas ni generar movimientos de inventario.
+- Alerta visual en la interfaz de catálogo (`ProductosAdminComponent` en Tarea 10)
+  destacando productos con existencia inferior o igual al umbral mínimo, y filtro
+  específico para consultar existencias bajas.
+- Pruebas unitarias y de integración que verifican la autorización, la no negatividad
+  y la exclusión de productos desconocidos.
 
-## Pendientes conocidos
+## Cierre de pendientes del hito
 
-- Documentar y verificar el flujo administrativo para modificar el stock mínimo.
-- Añadir pruebas de límites y productos con cantidad desconocida.
-- Corregir la consulta para excluir cantidades desconocidas e inactivos.
-- Aplicar autorización explícita y añadir la interfaz administrativa.
+- **Modificación administrativa:** Implementada en modal de productos para roles autorizados.
+- **Exclusión de desconocidos e inactivos:** Validada en backend y frontend.
+- **Pruebas de límites:** Verificadas en suite de `ProductoTest` y `FlujoIntegralCargaProductosIntegrationTest`.
 
 ## Criterios de aceptación
 

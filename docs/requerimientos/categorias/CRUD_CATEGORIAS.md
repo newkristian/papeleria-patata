@@ -1,7 +1,7 @@
 # Administración de categorías
 
-**Estado:** En desarrollo
-**Última revisión:** 2 de septiembre de 2026
+**Estado:** Implementado y verificado  
+**Última revisión:** 4 de septiembre de 2026
 
 ## Objetivo
 
@@ -29,16 +29,19 @@ Administrar las categorías que organizan el catálogo de productos.
 - Pruebas unitarias y de API verifican las relaciones y los permisos; administrador e
   inventarista pueden crear una categoría y usar su ID inmediatamente para crear un
   producto.
+- Mantenimiento frontend completo en Angular (`CategoriasAdminComponent`, `CategoriaService`,
+  ruta `/admin/categorias`), con listado en tarjetas, modal de creación y edición,
+  validaciones reactivas y actualización inmediata del selector de categorías en el
+  formulario de productos.
+
+## Cierre de pendientes del hito
+
+- **Mantenimiento frontend de categorías:** Completado en Tarea 9 y verificado en suite Vitest.
 
 ## Pendientes no esenciales
 
 - Definir en el futuro si el catálogo de categorías requiere estado activo y borrado
   lógico, según la dependencia descrita más abajo.
-
-## Pendientes para el mantenimiento de productos
-
-- Crear modelos, servicio HTTP y mantenimiento frontend de categorías antes del
-  formulario de productos.
 
 ## Dependencia no bloqueante
 

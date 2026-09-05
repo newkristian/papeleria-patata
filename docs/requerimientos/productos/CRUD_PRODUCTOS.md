@@ -1,7 +1,7 @@
 # Administración de productos
 
-**Estado:** En desarrollo  
-**Última revisión:** 2 de septiembre de 2026
+**Estado:** Implementado y verificado  
+**Última revisión:** 4 de septiembre de 2026
 
 ## Objetivo
 
@@ -64,14 +64,18 @@ proveedor, costos, precio y estado de inventario, sin eliminar su historial.
 - El POS recibe un DTO de listado sin costos y solo puede consultar productos activos.
 - La autorización de lectura y escritura está aplicada por operación en controller y,
   para reglas sensibles, también en servicio.
+- Interfaz administrativa completa en Angular (`ProductosAdminComponent`, `ProductoService`)
+  con formulario modal reactivo, selectores integrados de categoría y proveedor,
+  opción "Cantidad aún no contabilizada", cálculo visible del precio oficial y
+  desactivación/reactivación lógica protegida por rol.
+- Verificación integral E2E en `FlujoIntegralCargaProductosIntegrationTest` corriendo
+  sobre PostgreSQL 16 limpio en Testcontainers.
 
-## Pendientes conocidos
+## Cierre de pendientes del hito
 
-- Añadir la interfaz administrativa para completar el flujo desde una sesión de
-  usuario sin llamadas manuales a la API.
-- Completar en la tarea de inventario la semántica de ventas y movimientos mientras
-  `cantidadDesconocida = true`, incluida la concurrencia.
-- Completar el pipeline seguro y asíncrono de fotografías.
+- **Interfaz administrativa:** Completada en Tareas 8, 9 y 10 (`/admin/productos`).
+- **Semántica de inventario y concurrencia:** Completada en Tareas 5, 11 y 12.
+- **Pipeline asíncrono y seguro de fotografías:** Completado en Tareas 6 y 11.
 
 ## Dependencias de datos verificadas
 

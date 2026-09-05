@@ -673,7 +673,36 @@ Completar el conteo gradual, los movimientos y la administración visual del pro
 
 ## Tarea 12 — QA integral, seguridad y cierre documental
 
-**Estado:** Pendiente
+**Estado:** Completada (4 de septiembre de 2026)
+
+Se completó la verificación integral de aseguramiento de calidad (QA), seguridad, concurrencia y consistencia de datos:
+1. **Suite de integración integral E2E (`FlujoIntegralCargaProductosIntegrationTest` sobre PostgreSQL 16 limpio en Testcontainers):**
+   - **Flujo de negocio completo:**
+     - Alta de proveedor real con RFC válido.
+     - Alta de producto con `cantidadDesconocida = true` y stock inicial en 0.
+     - Subida de fotografía multipart (`POST /api/v1/productos/{id}/fotos`) con validación de cabeceras, respuesta `202 ACCEPTED` y procesamiento asíncrono seguro en segundo plano.
+     - Venta sin bloqueo de existencias bajo modalidad de cantidad desconocida (la venta se procesa y el stock se mantiene en 0 por contar).
+     - Conteo físico inicial de regularización (`AjusteInventarioDTO` en modo absoluto `esFijarStockAbsoluto = true`) que fija la existencia real (25 piezas) y apaga de forma atómica el flag `cantidadDesconocida`.
+     - Venta ordinaria con control de inventario que descuenta de la existencia real (baja de 25 a 20).
+     - Validación de control de existencias: intento de venta que excede el stock disponible (30 piezas solicitadas vs. 20 disponibles) rechazado con `400 BAD REQUEST` y mensaje "Stock insuficiente".
+     - Edición completa de datos del producto manteniendo consistencia de catálogo.
+     - Desactivación lógica (`PATCH /api/v1/productos/{id}/desactivar`): el producto pasa a `activo = false` sin borrado físico en base de datos.
+     - Intento de venta de producto inactivo rechazado con `400 BAD REQUEST`.
+   - **Flujo alterno de proveedor pendiente y reasignación automática:**
+     - Creación de producto sin proveedor (`proveedorId = null`): el backend le asigna automáticamente el proveedor de sistema `PENDIENTE` (`id = 1`, `sistema = true`).
+     - Asignación de proveedor comercial y actualización exitosa.
+     - Desactivación lógica del proveedor comercial (`DELETE /api/v1/proveedores/{id}` retornando `204 NO_CONTENT`): todos sus productos son reasignados automáticamente en bloque al proveedor `PENDIENTE` del sistema.
+   - **Matriz de roles y límites de seguridad en endpoints:**
+     - `VENDEDOR`: rechazo `403 FORBIDDEN` al intentar crear productos y proveedores; ocultamiento garantizado del costo unitario (`costoUnitario = null`) en el historial de movimientos de inventario.
+     - `INVENTARISTA`: rechazo `403 FORBIDDEN` al intentar crear proveedores; permitido crear productos siempre que no intente fijar margen de ganancia manual (el margen se calcula de forma fidedigna por la escala del sistema).
+     - `ADMINISTRADOR` y `GERENTE`: acceso completo a la gestión de proveedores, márgenes manuales y desactivaciones.
+2. **Pruebas automatizadas globales:**
+   - **Backend:** 134 pruebas pasando con éxito en `./mvnw test` (0 fallos, 0 errores) abarcando unitarias, repositorios, servicios, controladores y pruebas de integración con PostgreSQL real.
+   - **Frontend:** 90 pruebas unitarias pasando en `ng test --watch=false` (20 suites) cubriendo modelos, interceptores, guards de autenticación/roles, servicios y componentes administrativos.
+   - **Build de producción frontend:** `ng build` completado sin errores ni advertencias, generando chunks lazy optimizados.
+3. **Cierre de arquitectura y deuda técnica:**
+   - Resuelto y documentado en `.ai/bugs-and-learning/POSTGRE_HIBERNATE_BUGS.md` el manejo de parámetros nulos en PostgreSQL y Hibernate.
+   - No quedan dependencias huérfanas, temporales ni marcadores TODO pendientes.
 
 ### Objetivo
 

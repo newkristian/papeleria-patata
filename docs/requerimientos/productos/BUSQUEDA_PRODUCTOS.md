@@ -1,7 +1,7 @@
 # Búsqueda de productos
 
-**Estado:** Implementado  
-**Última revisión:** 2 de septiembre de 2026
+**Estado:** Implementado y verificado  
+**Última revisión:** 4 de septiembre de 2026
 
 ## Objetivo
 
@@ -21,8 +21,10 @@ condición de stock.
 - Un producto con cantidad desconocida no aparece como stock bajo.
 - Hay cobertura unitaria e integral para la visibilidad por rol, el catálogo inactivo
   y la ausencia de costos en respuestas del vendedor.
-
-## Pendientes no esenciales
-
-- Ampliar la matriz de combinaciones de filtros, paginación y resultados vacíos cuando
-  se construya la pantalla administrativa.
+- La pantalla administrativa (`ProductosAdminComponent` en Tarea 10) implementa
+  la combinación interactiva de todos estos filtros (texto/código, selector de categoría,
+  selector de proveedor, filtro de estado activo/inactivo/todos y selector de condición
+  de inventario incluyendo "Stock bajo" y "Por contar"), con paginación reactiva y
+  mensajes de estado vacío.
+- Verificado de punta a punta en suite de pruebas de frontend (Vitest) y backend
+  (Testcontainers PostgreSQL 16).

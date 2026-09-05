@@ -1,7 +1,7 @@
 # Inventario con cantidad desconocida
 
-**Estado:** En desarrollo  
-**Última revisión:** 2 de septiembre de 2026
+**Estado:** Implementado y verificado  
+**Última revisión:** 4 de septiembre de 2026
 
 ## Objetivo
 
@@ -27,15 +27,26 @@ negativas.
 ## Implementación verificada
 
 - Flyway, entidad y DTOs contienen la bandera `cantidadDesconocida`.
-- La creación de ventas omite la validación de existencias para estos productos.
+- La creación de ventas omite la validación de existencias para estos productos y
+  no altera `stockActual` mientras sea desconocido.
+- Movimientos relativos (entradas, salidas, ajustes relativos) son rechazados
+  con error de negocio descriptivo mientras la cantidad sea desconocida.
+- El ajuste absoluto (`AjusteInventarioDTO` con `esFijarStockAbsoluto = true`) fija
+  la existencia real y apaga atómicamente `cantidadDesconocida` bajo `@Lock(PESSIMISTIC_WRITE)`.
+- Consulta de stock bajo excluye automáticamente productos con `cantidadDesconocida = true`.
+- Interfaz en frontend (`InventarioAdminComponent` en Tarea 11): tarjeta destacada
+  de productos "Por contar" con botón de acción inmediata "Conteo inicial" que abre
+  el modal en modo absoluto para fijar existencias y pasar a control normal.
+- Pruebas unitarias y de integración (`SemanticaInventarioIntegrationTest` y
+  `FlujoIntegralCargaProductosIntegrationTest`) verificando el ciclo completo.
 
-## Pendientes conocidos
+## Cierre de pendientes del hito
 
-- Evitar que ventas y salidas descuenten el valor provisional de `stockActual`.
-- Rechazar movimientos relativos hasta completar el conteo absoluto.
-- Verificar atomicidad y concurrencia entre el conteo y una venta simultánea.
-- Excluir estos productos de consultas de stock bajo.
-- Añadir pruebas de transición y regresión en ventas.
+- **Evitar descuento provisional en ventas:** Implementado y verificado en Tarea 5.
+- **Rechazo de movimientos relativos:** Implementado y verificado en Tarea 5.
+- **Atomicidad y concurrencia pesimista:** Implementado y verificado en Tareas 5 y 12.
+- **Exclusión de stock bajo:** Implementado y verificado en Tareas 4 y 10.
+- **Flujo frontend de conteo inicial:** Implementado y verificado en Tarea 11.
 
 ## Criterios de aceptación
 

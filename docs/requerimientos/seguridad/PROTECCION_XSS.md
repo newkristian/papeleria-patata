@@ -1,7 +1,7 @@
 # Protección contra Cross-Site Scripting (XSS)
 
-**Estado:** En análisis
-**Última revisión:** 28 de agosto de 2026
+**Estado:** Mitigaciones verificadas en módulo de productos  
+**Última revisión:** 4 de septiembre de 2026
 
 ## Objetivo
 
@@ -18,8 +18,16 @@ porque su vigencia permite solicitar nuevos access tokens.
 ## Controles actuales
 
 - Angular escapa interpolaciones de texto de forma predeterminada.
-- No se ha identificado uso de renderizado arbitrario mediante `innerHTML`.
+- No se ha identificado uso de renderizado arbitrario mediante `innerHTML` ni
+  bypasses de sanitización (`bypassSecurityTrust*`).
 - El access token deja de persistir cuando termina la sesión del navegador.
+- En el módulo de productos, categorías, proveedores e inventario se aplica data binding
+  estricto mediante propiedades nativas y directivas (`[src]`, `[value]`, `{{ }}`).
+- Normalización y filtrado de entradas en backend mediante Bean Validation y expresiones
+  regulares para códigos de barras y RFC.
+- Carga segura de fotografías: `ValidadorSeguridadImagen` descarta archivos ejecutables
+  disfrazados, como SVG con `<script>` incrustado o polyglots, requiriendo decodificación
+  real en píxeles raster (JPEG/PNG) antes de aceptar el archivo.
 
 ## Mitigaciones pendientes
 

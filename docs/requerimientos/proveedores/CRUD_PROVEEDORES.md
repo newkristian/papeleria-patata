@@ -1,7 +1,7 @@
 # Administración de proveedores
 
-**Estado:** En desarrollo  
-**Última revisión:** 2 de septiembre de 2026
+**Estado:** Implementado y verificado  
+**Última revisión:** 4 de septiembre de 2026
 
 ## Objetivo
 
@@ -35,8 +35,9 @@ romper productos ni referencias históricas.
 ## Validaciones aprobadas
 
 - Nombre obligatorio, normalizado y con longitud máxima.
-- RFC opcional con longitud y formato razonables; teléfono, email y contacto opcionales
-  con longitudes acotadas y email válido cuando se proporcione.
+- RFC opcional con longitud y formato razonables (validado con patrón SAT mexicano);
+  teléfono, email y contacto opcionales con longitudes acotadas y email válido cuando
+  se proporcione.
 - Porcentaje de comisión entre cero y cien, con máximo dos decimales.
 - Los errores de validación, ausencia y conflicto deben utilizar respuestas HTTP
   consistentes y no excepciones genéricas.
@@ -46,22 +47,25 @@ romper productos ni referencias históricas.
 - La migración V13 crea exactamente una identidad de sistema `PENDIENTE`, agrega el
   estado activo y protege en PostgreSQL su modificación, eliminación y uso en pagos.
 - Controller, Service, Repository, Mapper y DTOs implementan consulta, creación,
-  edición, búsqueda paginada por término/estado y desactivación lógica.
+  edición, búsqueda paginada por término/estado y desactivación lógica (`204 NO_CONTENT`).
 - La desactivación reasigna primero todos los productos a `PENDIENTE` en la misma
   transacción. Un fallo posterior revierte también la reasignación.
-- El listado para selección devuelve únicamente proveedores comerciales activos; la
-  búsqueda administrativa incluye el filtro de estado y nunca expone `PENDIENTE` como
-  opción comercial.
+- Asignación automática de `PENDIENTE` al crear productos sin proveedor (en backend
+  y frontend).
+- Endpoint `GET /api/v1/proveedores/{id}/productos/conteo` para consultar productos
+  afectados antes de una desactivación.
+- Interfaz administrativa completa en Angular (`ProveedoresAdminComponent`, `ProveedorService`,
+  ruta `/admin/proveedores`) con formulario reactivo, validación de RFC, badges
+  protegidos de `PENDIENTE` y modal de confirmación con conteo de productos a transferir.
 - Bean Validation, errores 400/404/409 y la matriz de autorización se verificaron con
   pruebas unitarias y solicitudes HTTP reales para los cuatro roles.
 - El porcentaje de comisión utiliza `BigDecimal` y `NUMERIC(5, 2)`, con rango de
   cero a cien protegido en el contrato y en la base de datos.
 
-## Pendientes conocidos
+## Cierre de pendientes del hito
 
-- Hacer que el contrato de productos asigne automáticamente `PENDIENTE` cuando el
-  cliente omita proveedor; corresponde a la Tarea 4 del plan de carga de productos.
-- Implementar la interfaz administrativa.
+- **Asignación automática de PENDIENTE:** Completada en Tarea 4 y verificada en E2E.
+- **Interfaz administrativa de proveedores:** Completada en Tarea 9 (`/admin/proveedores`).
 
 ## Dependencia no bloqueante
 

@@ -1,7 +1,7 @@
 # Precisión monetaria
 
-**Estado:** Implementado
-**Última revisión:** 2 de septiembre de 2026
+**Estado:** Implementado y verificado  
+**Última revisión:** 4 de septiembre de 2026
 
 ## Objetivo
 
@@ -20,8 +20,8 @@ reglas de redondeo explícitas.
 
 ## Implementación verificada
 
-- Productos: costo, porcentaje de ganancia y precio de venta.
-- Movimientos de inventario: costo unitario.
+- Productos: costo de compra, porcentaje de ganancia y precio de venta.
+- Movimientos de inventario: costo unitario en entradas, salidas y ajustes (`AjusteInventarioDTO`).
 - Ventas: subtotal, descuento, impuesto y total.
 - Detalles de venta: precio de lista, porcentaje, monto descontado, precio final y
   subtotal.
@@ -29,7 +29,7 @@ reglas de redondeo explícitas.
 - Flyway V5 convierte los datos existentes redondeando a dos decimales.
 - Clientes: total acumulado de compras.
 - Promociones de cliente: porcentajes, compra mínima y descuento fijo.
-- Proveedores: porcentaje de comisión, pagos y reportes financieros.
+- Proveedores: porcentaje de comisión (0 a 100 con 2 decimales), pagos y reportes financieros.
 - Flyway V6 convierte los datos existentes de clientes y proveedores, redondeando a
   dos decimales y agregando restricciones de dominio.
 - No permanecen usos de `Double` o `double` en el código Java del backend ni en sus
@@ -43,6 +43,8 @@ reglas de redondeo explícitas.
 - Verificado con una prueba de integración real (T8) que compara el resultado del
   backend contra un cálculo `BigDecimal`/`HALF_UP` independiente en un caso con
   decimales no triviales (33.33% de $672.00), no solo con valores redondos.
+- Verificado en `FlujoIntegralCargaProductosIntegrationTest` que todos los cálculos
+  de productos, regularización y ventas sucesivas mantienen precisión monetaria exacta.
 
 ## Criterios de aceptación
 

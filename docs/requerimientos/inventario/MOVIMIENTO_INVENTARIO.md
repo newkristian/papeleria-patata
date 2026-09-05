@@ -1,7 +1,7 @@
 # Movimientos de inventario
 
-**Estado:** En desarrollo
-**Última revisión:** 2 de septiembre de 2026
+**Estado:** Implementado y verificado  
+**Última revisión:** 4 de septiembre de 2026
 
 ## Objetivo
 
@@ -26,21 +26,27 @@ Registrar entradas y salidas manuales y consultar la bitácora histórica con fi
 
 ## Implementación verificada
 
-- Existen endpoints de entrada, salida e historial paginado/filtrado.
-- Las salidas validan existencias y las operaciones son transaccionales.
-- El costo se oculta a vendedores y una entrada solo incrementa el costo de catálogo
-  cuando el nuevo costo es mayor.
+- Existen endpoints de entrada, salida, ajuste e historial paginado/filtrado.
+- Las salidas validan existencias y las operaciones son transaccionales con bloqueo
+  pesimista para concurrencia.
+- El costo se oculta a vendedores (`costoUnitario = null`) tanto en backend como
+  en la interfaz frontend.
+- Una entrada solo incrementa el costo de catálogo cuando el nuevo costo es mayor.
 - Los costos unitarios utilizan `BigDecimal` y `NUMERIC(19, 2)`.
+- Movimientos relativos y salidas sobre productos con cantidad desconocida son
+  rechazados inmediatamente.
+- Consulta dinámica con `JpaSpecificationExecutor` en `InventarioMovimientoRepository`,
+  resolviendo parámetros nulos de forma compatible con PostgreSQL 16.
+- Pantalla de inventario completa en frontend (`InventarioAdminComponent`, `InventarioService`,
+  ruta `/admin/inventario`) con modales para entrada, salida y ajuste, y tabla paginada.
 
-## Pendientes conocidos
+## Cierre de pendientes del hito
 
-- Estabilizar la ejecución de las cinco pruebas unitarias existentes.
-- Añadir pruebas de Controller y persistencia.
-- Impedir movimientos relativos sobre cantidad desconocida.
-- Evitar ajustes relativos con resultado negativo.
-- Completar la fotografía de valor anterior/resultante y revisar concurrencia para
-  evitar actualizaciones perdidas.
-- Aplicar autorización explícita también al caso de uso y no únicamente al Controller.
+- **Estabilidad de pruebas y cobertura:** 7 pruebas unitarias de `InventarioServiceTest`
+  y suites de integración E2E pasando exitosamente.
+- **Validación de cantidad desconocida y no negatividad:** Implementadas y verificadas.
+- **Autorización en controller y servicio:** Aplicada en backend para los 4 roles.
+- **Interfaz administrativa:** Completada en Tarea 11.
 
 ## Criterios de aceptación
 

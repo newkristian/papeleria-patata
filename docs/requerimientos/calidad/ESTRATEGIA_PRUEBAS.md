@@ -1,7 +1,7 @@
 # Estrategia de pruebas del MVP
 
-**Estado:** En desarrollo  
-**Última revisión:** 2 de septiembre de 2026
+**Estado:** Implementado y verificado  
+**Última revisión:** 4 de septiembre de 2026
 
 ## Objetivo
 
@@ -10,38 +10,37 @@ pruebas unitarias y de integración enfocadas en riesgo.
 
 ## Implementación verificada
 
-- La suite backend ejecuta 111 pruebas: 96 unitarias y quince escenarios de
-  integración de ventas y catálogos.
-- La integración usa Testcontainers con PostgreSQL 16.2 y aplica las 13 migraciones
-  Flyway sobre un esquema limpio. La prueba de catálogos comprueba además V13 sobre
-  los datos existentes de migraciones anteriores y confirma que una segunda ejecución
-  de Flyway no duplica el proveedor reservado.
-- Maven Surefire carga Mockito 5.20 como `javaagent`, evitando el self-attach no
-  disponible en algunos JDK y entornos de CI.
-- El frontend ejecuta 26 pruebas distribuidas en siete archivos.
-- La prueba raíz de Angular verifica el `router-outlet` real y no un título eliminado.
-- El 2 de septiembre de 2026 se verificaron satisfactoriamente la suite backend
-  completa, la suite frontend y el build de producción Angular.
-- La cobertura de catálogos incluye validación, conflictos de relaciones, matriz de
-  roles, invariantes de `PENDIENTE`, reasignación masiva y rollback transaccional.
-- La cobertura de productos incluye contratos de alta y edición, código de barras
-  duplicado, asignación y cambio de proveedor, límites de campos, ciclo de vida
-  lógico, persistencia de relaciones, bloqueo de venta inactiva y respuestas del POS
-  sin costos.
+- La suite backend ejecuta **134 pruebas automatizadas** (0 fallos, 0 errores):
+  - Pruebas unitarias de servicios, repositorios, controladores, promociones,
+    procesamiento de fotografías y validadores de seguridad.
+  - Cuatro suites de integración E2E ejecutadas sobre PostgreSQL 16 limpio en
+    Testcontainers:
+    1. `VentaFlujoIntegrationTest`: ciclo de venta, promociones y descuentos.
+    2. `CatalogosIntegrationTest`: categorías, productos y búsquedas combinadas.
+    3. `SemanticaInventarioIntegrationTest`: inventario con cantidad desconocida,
+       regularización y ventas sin bloqueo.
+    4. `FlujoIntegralCargaProductosIntegrationTest`: ciclo de negocio completo
+       (proveedor, producto, foto asíncrona, venta desconocida, conteo, venta controlada,
+       desactivación lógica, reasignación automática a `PENDIENTE` y matriz de 4 roles).
+- Se ejecutan las 14 migraciones Flyway (V1 a V14) sobre esquema limpio sin fallas.
+- Maven Surefire carga Mockito 5.20 como `javaagent`.
+- El frontend ejecuta **90 pruebas unitarias** en **20 suites Vitest** (100% aprobadas),
+  cubriendo modelos, servicios HTTP, interceptores, guards de autorización,
+  componentes administrativos (`CategoriasAdminComponent`, `ProveedoresAdminComponent`,
+  `ProductosAdminComponent`, `InventarioAdminComponent`) y modales (`ProductoFotosModalComponent`).
+- Compilación de producción Angular (`ng build`) completada con éxito, generando
+  chunks lazy optimizados sin advertencias.
+- Se verificó la matriz completa de roles (`ADMINISTRADOR`, `GERENTE`, `INVENTARISTA` y `VENDEDOR`)
+  tanto a nivel de endpoints HTTP directos como en la experiencia de usuario en frontend.
 
 ## Consideraciones del entorno
 
-- Testcontainers necesita acceso al socket de Docker. En entornos aislados la suite
-  completa debe ejecutarse con ese acceso autorizado; las pruebas unitarias pueden
-  ejecutarse excluyendo `VentaFlujoIntegrationTest` y `CatalogosIntegrationTest`.
-- En el sandbox inspeccionado, esbuild termina en un deadlock incluso con un worker.
-  El mismo `npm run build` finaliza correctamente fuera del sandbox, por lo que no se
-  modificó configuración ni se actualizaron dependencias para ocultar una limitación
-  del entorno.
+- Testcontainers necesita acceso al socket de Docker.
+- Se verificó que los contenedores locales de Docker y el servidor de desarrollo
+  estén detenidos antes de correr suites completas para evitar colisiones de puertos.
 
-## Pendientes conocidos
+## Cierre de pendientes del hito
 
-- Faltan pruebas específicas de autenticación y de algunos Controllers y Repositories
-  fuera de los flujos integrales ya cubiertos.
-- Las nuevas tareas de productos, inventario y fotografías deberán añadir
-  pruebas orientadas a autorización, integridad, concurrencia y archivos hostiles.
+- Pruebas de integración añadidas para todo el ciclo de vida de productos, fotos,
+  proveedores, inventario y matriz de autorización.
+- Pruebas frontend añadidas para todos los componentes y servicios del área administrativa.

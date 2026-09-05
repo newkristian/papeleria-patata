@@ -1,7 +1,7 @@
 # Inventario por tienda y transferencias
 
-**Estado:** Aprobado, diferido
-**Última revisión:** 2 de septiembre de 2026
+**Estado:** Aprobado, diferido  
+**Última revisión:** 4 de septiembre de 2026
 
 ## Objetivo
 
@@ -32,7 +32,7 @@ permitiendo transferir unidades de una tienda a otra con trazabilidad completa.
 - El modelo actual almacena `stockActual`, `stockMinimo` y `cantidadDesconocida`
   directamente en `Producto`; por tanto, todas las tiendas comparten una sola
   existencia.
-- El alcance de `docs/trabajo-actual/TAREAS_CARGA_PRODUCTOS.md` mantendrá
+- El alcance completado en `docs/trabajo-completado/TAREAS_CARGA_PRODUCTOS.md` mantuvo
   temporalmente este modelo global compartido.
 - Esta decisión transitoria permite completar el mantenimiento de productos sin
   introducir ahora una migración transversal en ventas, inventario, búsquedas y
