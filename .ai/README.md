@@ -35,8 +35,9 @@ El agente deberá leer:
 
 1. el núcleo obligatorio;
 2. las reglas relacionadas con la tarea;
-3. el workflow aplicable;
-4. la definición del agente o rol relevante cuando corresponda.
+3. los aprendizajes y bugs conocidos (`.ai/bugs-and-learning/`) relacionados con la tecnología tocada;
+4. el workflow aplicable;
+5. la definición del agente o rol relevante cuando corresponda.
 
 ---
 
@@ -109,6 +110,7 @@ Para cambios relacionados con PostgreSQL, JPA o Flyway:
 
 - `.ai/rules/database.md`
 - `.ai/workflows/database_change.md`
+- `.ai/bugs-and-learning/POSTGRE_HIBERNATE_BUGS.md` (Lectura obligatoria para repositorios, consultas, filtros opcionales o paginación en JPA)
 
 ## Seguridad
 
@@ -154,6 +156,16 @@ Cuando se creen o modifiquen pruebas:
 Cuando se modifique documentación o un cambio requiera actualizarla:
 
 - `.ai/rules/documentation.md`
+
+---
+
+# Aprendizajes y Registro de Bugs Conocidos (`.ai/bugs-and-learning/`)
+
+Esta carpeta documenta análisis post-mortem, causas raíz y soluciones arquitectónicas aprobadas para errores técnicos complejos ocurridos durante el desarrollo del proyecto.
+
+**Los agentes deben consultar obligatoriamente esta documentación antes de diseñar o implementar código nuevo, así como al depurar fallos en producción o pruebas:**
+
+- `.ai/bugs-and-learning/POSTGRE_HIBERNATE_BUGS.md`: Inferencia estricta de tipos en PostgreSQL con parámetros nulos en Hibernate (`could not determine data type of parameter`, `lower(bytea)`), y la solución obligatoria basada en `JpaSpecificationExecutor` y `Specification`.
 
 ---
 
