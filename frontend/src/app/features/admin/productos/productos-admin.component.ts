@@ -15,10 +15,11 @@ import {
 } from '../../../core/models/producto.model';
 import { Categoria } from '../../../core/models/categoria.model';
 import { Proveedor } from '../../../core/models/proveedor.model';
+import { ProductoFotosModalComponent } from './producto-fotos-modal.component';
 
 @Component({
   selector: 'app-productos-admin',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ProductoFotosModalComponent],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       <!-- Encabezado de la Sección -->
@@ -262,6 +263,15 @@ import { Proveedor } from '../../../core/models/proveedor.model';
                     <td class="py-3.5 px-6 text-right">
                       <div class="inline-flex items-center space-x-2">
                         @if (authService.canManageProducts()) {
+                          <button
+                            type="button"
+                            (click)="abrirModalFotos(prod)"
+                            class="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            title="Gestionar fotografías">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </button>
                           <button
                             type="button"
                             (click)="abrirModalEditar(prod.id)"
@@ -598,6 +608,16 @@ import { Proveedor } from '../../../core/models/proveedor.model';
           </div>
         </div>
       }
+
+      <!-- Modal de Gestión de Fotografías -->
+      @if (modalFotos() && productoParaFotos()) {
+        <app-producto-fotos-modal
+          [productoId]="productoParaFotos()!.id"
+          [productoNombre]="productoParaFotos()!.nombre"
+          (cerrar)="cerrarModalFotos()"
+          (fotosActualizadas)="onFotosActualizadas()">
+        </app-producto-fotos-modal>
+      }
     </div>
   `,
 })
@@ -634,6 +654,9 @@ export class ProductosAdminComponent implements OnInit {
   readonly modalEstado = signal(false);
   readonly productoParaEstado = signal<ProductoListado | null>(null);
   readonly accionEstado = signal<boolean>(false); // false = desactivar, true = reactivar
+
+  readonly modalFotos = signal(false);
+  readonly productoParaFotos = signal<ProductoListado | null>(null);
 
   // Notificaciones
   readonly mensajeExito = signal<string | null>(null);
@@ -902,5 +925,19 @@ export class ProductosAdminComponent implements OnInit {
         this.mensajeError.set(err?.error?.mensaje || 'Error al cambiar el estado del producto');
       },
     });
+  }
+
+  abrirModalFotos(prod: ProductoListado): void {
+    this.productoParaFotos.set(prod);
+    this.modalFotos.set(true);
+  }
+
+  cerrarModalFotos(): void {
+    this.modalFotos.set(false);
+    this.productoParaFotos.set(null);
+  }
+
+  onFotosActualizadas(): void {
+    this.cargarProductos();
   }
 }

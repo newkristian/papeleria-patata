@@ -8,6 +8,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { Pagina, ProductoDetalle, ProductoListado } from '../../../core/models/producto.model';
 import { Categoria } from '../../../core/models/categoria.model';
 import { Proveedor } from '../../../core/models/proveedor.model';
+import { ProductoFotoService } from '../../../core/services/producto-foto.service';
 
 describe('ProductosAdminComponent', () => {
   const mockCategorias: Categoria[] = [
@@ -119,6 +120,15 @@ describe('ProductosAdminComponent', () => {
     listarTodos: vi.fn().mockReturnValue(of(mockProveedores)),
   };
 
+  const fotoServiceMock = {
+    listarFotos: vi.fn().mockReturnValue(of([])),
+    subirFoto: vi.fn().mockReturnValue(of({})),
+    obtenerEstadoFoto: vi.fn().mockReturnValue(of({})),
+    marcarComoPrincipal: vi.fn().mockReturnValue(of({})),
+    eliminarFoto: vi.fn().mockReturnValue(of({})),
+    reintentarProcesamiento: vi.fn().mockReturnValue(of({})),
+  };
+
   const authServiceMock = {
     canManageProducts: () => true,
     canManageProviders: () => true,
@@ -132,6 +142,7 @@ describe('ProductosAdminComponent', () => {
     productoServiceMock.buscarAvanzado.mockReturnValue(of(mockPagina));
     categoriaServiceMock.listarTodas.mockReturnValue(of(mockCategorias));
     proveedorServiceMock.listarTodos.mockReturnValue(of(mockProveedores));
+    fotoServiceMock.listarFotos.mockReturnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [ProductosAdminComponent],
@@ -139,6 +150,7 @@ describe('ProductosAdminComponent', () => {
         { provide: ProductoService, useValue: productoServiceMock },
         { provide: CategoriaService, useValue: categoriaServiceMock },
         { provide: ProveedorService, useValue: proveedorServiceMock },
+        { provide: ProductoFotoService, useValue: fotoServiceMock },
         { provide: AuthService, useValue: authServiceMock },
       ],
     }).compileComponents();
@@ -280,5 +292,24 @@ describe('ProductosAdminComponent', () => {
     expect(productoServiceMock.desactivar).toHaveBeenCalledWith(1);
     expect(component.modalEstado()).toBe(false);
     expect(component.mensajeExito()).toContain('desactivado exitosamente');
+  });
+
+  it('should open photo management modal and reload products on update', () => {
+    const fixture = TestBed.createComponent(ProductosAdminComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const prod = mockProductos[0];
+    component.abrirModalFotos(prod);
+
+    expect(component.modalFotos()).toBe(true);
+    expect(component.productoParaFotos()).toEqual(prod);
+
+    component.onFotosActualizadas();
+    expect(productoServiceMock.buscarAvanzado).toHaveBeenCalledTimes(2);
+
+    component.cerrarModalFotos();
+    expect(component.modalFotos()).toBe(false);
+    expect(component.productoParaFotos()).toBeNull();
   });
 });

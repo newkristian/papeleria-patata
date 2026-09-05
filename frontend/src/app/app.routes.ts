@@ -48,8 +48,7 @@ export const routes: Routes = [
       {
         path: 'inventario',
         canActivate: [roleGuard(['ADMINISTRADOR', 'GERENTE', 'INVENTARISTA'])],
-        loadComponent: () => import('./features/admin/pages/admin-placeholder.component').then(m => m.AdminPlaceholderComponent),
-        data: { titulo: 'Control de Inventario', descripcion: 'Entradas, salidas y ajustes absolutos de inventario.' }
+        loadComponent: () => import('./features/admin/inventario/inventario-admin.component').then(m => m.InventarioAdminComponent),
       },
       {
         path: 'usuarios',

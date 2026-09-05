@@ -622,7 +622,29 @@ Permitir dar de alta, localizar y editar productos sin detener la tienda.
 
 ## Tarea 11 — Interfaz de inventario y fotografías
 
-**Estado:** Pendiente
+**Estado:** Completada (4 de septiembre de 2026)
+
+Se implementó de manera completa la interfaz de control de inventario y la galería modal
+de fotografías de productos:
+1. **Control de inventario (`/admin/inventario`):**
+   - Tarjeta destacada de atención para productos con cantidad desconocida ("Por contar"), con
+     acción rápida "Conteo inicial" que abre el formulario de ajuste en modo absoluto (`esFijarStockAbsoluto = true`)
+     para fijar la existencia real y apagar automáticamente `cantidadDesconocida`.
+   - Registro de movimientos manuales de Entrada (validación cantidad > 0, motivo obligatorio y costo de compra),
+     Salida (validación cantidad > 0, motivo obligatorio y comprobación contra existencia disponible) y
+     Ajuste de Stock (soporte de conteo físico absoluto o ajuste relativo con motivo obligatorio).
+   - Tabla paginada de historial de movimientos con filtros por tipo de movimiento, producto y fechas,
+     y ocultamiento dinámico de costos unitarios cuando el usuario tiene rol `VENDEDOR`.
+2. **Galería modal y pipeline asíncrono de fotografías:**
+   - Carga de imágenes con validación cliente de tamaño exacto (máximo 4 MB / 4,194,304 bytes) y tipos MIME permitidos (`image/jpeg`, `image/png`).
+   - Envío multipart `POST /api/v1/productos/{id}/fotos` que recibe respuesta `202 Accepted`.
+   - Polling reactivo acotado (intervalo de 1.5s, máximo 15 intentos) para consultar estado asíncrono hasta alcanzar `COMPLETADO` o `ERROR`, con cancelación inmediata al destruir el componente.
+   - Indicadores visuales de estado (`PENDIENTE`, `PROCESANDO`, `LISTA`, `ERROR` con mensaje descriptivo), opción de reintentar procesamiento fallido, marcado de foto principal y eliminación.
+   - Botón directo de "Fotografías" en el catálogo de productos (`/admin/productos`), con recarga reactiva de miniaturas.
+3. **Verificación técnica:**
+   - 90 pruebas unitarias frontend pasando (20 archivos de prueba).
+   - Build de producción Angular generado exitosamente sin advertencias.
+   - 130 pruebas unitarias y de integración de backend pasando.
 
 ### Objetivo
 

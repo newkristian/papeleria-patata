@@ -183,5 +183,19 @@ public class SemanticaInventarioIntegrationTest {
         final ResponseEntity<String> anonPerfil = get("/api/v1/usuarios/perfil", null, String.class);
         assertTrue(anonPerfil.getStatusCode() == HttpStatus.UNAUTHORIZED || anonPerfil.getStatusCode() == HttpStatus.FORBIDDEN);
     }
+
+    @Test
+    void consultarMovimientosInventarioConYsinFiltros() {
+        // 1. Sin parámetros (todos null) en PostgreSQL (reproduce el escenario del error 500)
+        final ResponseEntity<String> respSinFiltros = get(
+                "/api/v1/inventario/movimientos?page=0&size=20", adminToken, String.class);
+        assertEquals(HttpStatus.OK, respSinFiltros.getStatusCode());
+        assertNotNull(respSinFiltros.getBody());
+
+        // 2. Con filtro de tipo
+        final ResponseEntity<String> respConTipo = get(
+                "/api/v1/inventario/movimientos?tipo=AJUSTE&page=0&size=10", inventaristaToken, String.class);
+        assertEquals(HttpStatus.OK, respConTipo.getStatusCode());
+    }
 }
 

@@ -1,29 +1,49 @@
 package com.kristianconk.api_papeleria.inventario;
 
 import com.kristianconk.api_papeleria.enums.TipoMovimiento;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Repository
-public interface InventarioMovimientoRepository extends JpaRepository<InventarioMovimiento, Long> {
+public interface InventarioMovimientoRepository extends JpaRepository<InventarioMovimiento, Long>, JpaSpecificationExecutor<InventarioMovimiento> {
 
-    @Query("SELECT im FROM InventarioMovimiento im WHERE " +
-           "(:productoId IS NULL OR im.producto.id = :productoId) AND " +
-           "(:tipo IS NULL OR im.tipo = :tipo) AND " +
-           "(:usuarioId IS NULL OR im.usuario.id = :usuarioId) AND " +
-           "(:fechaInicio IS NULL OR im.fechaMovimiento >= :fechaInicio) AND " +
-           "(:fechaFin IS NULL OR im.fechaMovimiento <= :fechaFin)")
-    Page<InventarioMovimiento> buscarMovimientos(
-            @Param("productoId") Long productoId,
-            @Param("tipo") TipoMovimiento tipo,
-            @Param("usuarioId") Long usuarioId,
-            @Param("fechaInicio") LocalDateTime fechaInicio,
-            @Param("fechaFin") LocalDateTime fechaFin,
-            Pageable pageable);
+    default Page<InventarioMovimiento> buscarMovimientos(
+            Long productoId,
+            TipoMovimiento tipo,
+            Long usuarioId,
+            LocalDateTime fechaInicio,
+            LocalDateTime fechaFin,
+            Pageable pageable) {
+        final Specification<InventarioMovimiento> spec = (root, query, cb) -> {
+            final List<Predicate> predicates = new ArrayList<>();
+            if (productoId != null) {
+                predicates.add(cb.equal(root.get("producto").get("id"), productoId));
+            }
+            if (tipo != null) {
+                predicates.add(cb.equal(root.get("tipo"), tipo));
+            }
+            if (usuarioId != null) {
+                predicates.add(cb.equal(root.get("usuario").get("id"), usuarioId));
+            }
+            if (fechaInicio != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("fechaMovimiento"), fechaInicio));
+            }
+            if (fechaFin != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("fechaMovimiento"), fechaFin));
+            }
+            return predicates.isEmpty() ? null : cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return findAll(spec, pageable);
+    }
 }
+
